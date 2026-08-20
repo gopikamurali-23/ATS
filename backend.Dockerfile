@@ -1,14 +1,21 @@
-# Build Stage
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
-WORKDIR /app
-COPY backend/pom.xml .
-RUN mvn dependency:go-offline
-COPY backend/src ./src
-RUN mvn package -DskipTests
+FROM node:20-alpine
 
-# Run Stage
-FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/ats-backend-0.0.1-SNAPSHOT.jar app.jar
+
+# Copy package descriptors first to cache dependencies
+COPY backend/package*.json ./
+
+# Install dependencies
+RUN npm ci --omit=dev
+
+# Copy Prisma schema and generate client
+COPY backend/prisma ./prisma
+RUN npx prisma generate
+
+# Copy application source code
+COPY backend/src ./src
+
+# Expose port (defaults to 8080 in container, mapping to environment variable)
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+CMD ["node", "src/app.js"]

@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:Gopika%40243@localhost:5432/postgres?schema=public"
+}
+
+model applications {
+  id           BigInt       @id @default(autoincrement())
+  applied_at   DateTime?    @db.Timestamp(6)
+  resume_text  String?
+  status       String?      @db.VarChar(255)
+  candidate_id BigInt
+  job_id       BigInt
+  jobs         jobs         @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk65weib1lru9dkrbto5pv389vi")
+  candidates   candidates   @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkg4e16cwk1qrad923bpx4hamdh")
+  ats_results  ats_results?
+}
+
+model ats_results {
+  id                       BigInt       @id @default(autoincrement())
+  analyzed_at              DateTime?    @db.Timestamp(6)
+  candidate_summary        String?
+  education_match_score    Float
+  experience_match_score   Float
+  final_ats_score          Float
+  interview_recommendation String?
+  keyword_match_score      Float
+  missing_skills           String?
+  skill_match_score        Float
+  strengths                String?
+  weaknesses               String?
+  application_id           BigInt       @unique(map: "uk_l8pr6kdsj4lfqeudlw376qta2")
+  applications             applications @relation(fields: [application_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk3q1q4scjeoy4qlsu33qd5m98u")
+}
+
+model candidate_education {
+  candidate_id    BigInt
+  education_entry String     @db.Text
+  candidates      candidates @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk1u4u9ua2ovmpu6nhgywgv0y1o")
+
+  @@id([candidate_id, education_entry])
+}
+
+model candidate_experience {
+  candidate_id     BigInt
+  experience_entry String     @db.Text
+  candidates       candidates @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk7rb84nsb3y9d11xrfqblcb7fr")
+
+  @@id([candidate_id, experience_entry])
+}
+
+model candidate_skills {
+  candidate_id BigInt
+  skill        String     @db.VarChar(255)
+  candidates   candidates @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkk71gu2subkaxroroxevtc6lu6")
+
+  @@id([candidate_id, skill])
+}
+
+model candidates {
+  id                   BigInt                 @id @default(autoincrement())
+  first_name           String                 @db.VarChar(255)
+  last_name            String                 @db.VarChar(255)
+  phone                String?                @db.VarChar(255)
+  resume_url           String?
+  title                String?                @db.VarChar(255)
+  user_id              BigInt?                @unique(map: "uk_doi1o7iyehcrqrrrbxjostvv5")
+  applications         applications[]
+  candidate_education  candidate_education[]
+  candidate_experience candidate_experience[]
+  candidate_skills     candidate_skills[]
+  users                users?                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkme4fkelukmx2s63tlcrft6hio")
+}
+
+model companies {
+  id          BigInt  @id @default(autoincrement())
+  description String?
+  industry    String? @db.VarChar(255)
+  location    String? @db.VarChar(255)
+  name        String  @db.VarChar(255)
+  website     String? @db.VarChar(255)
+  user_id     BigInt? @unique(map: "uk_5xg6ed73n32iai9psir68pia9")
+  users       users?  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk9l5d0fem75e59uwf9upwuf9du")
+  jobs        jobs[]
+}
+
+model job_keywords {
+  job_id  BigInt
+  keyword String @db.VarChar(255)
+  jobs    jobs   @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkl4b1xq220t2885j4mefb8ql8b")
+
+  @@id([job_id, keyword])
+}
+
+model job_skills {
+  job_id BigInt
+  skill  String @db.VarChar(255)
+  jobs   jobs   @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk1gb74tysr9vkypwivvvovxq1f")
+
+  @@id([job_id, skill])
+}
+
+model jobs {
+  id                        BigInt         @id @default(autoincrement())
+  created_at                DateTime?      @db.Timestamp(6)
+  description               String
+  education_required        String?        @db.VarChar(255)
+  experience_required_years Int
+  location                  String?        @db.VarChar(255)
+  requirements              String?
+  salary_range              String?        @db.VarChar(255)
+  status                    String?        @db.VarChar(255)
+  title                     String         @db.VarChar(255)
+  company_id                BigInt
+  applications              applications[]
+  job_keywords              job_keywords[]
+  job_skills                job_skills[]
+  companies                 companies      @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkrtmqcrktb6s7xq8djbs2a2war")
+}
+
+model users {
+  id         BigInt      @id @default(autoincrement())
+  email      String      @unique(map: "uk_6dotkott2kjsp8vw4d0m25fb7") @db.VarChar(255)
+  password   String      @db.VarChar(255)
+  role       String      @db.VarChar(255)
+  username   String      @unique(map: "uk_r43af9ap4edm43mmtq01oddj6") @db.VarChar(255)
+  candidates candidates?
+  companies  companies?
+}

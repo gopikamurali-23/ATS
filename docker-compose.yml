@@ -21,11 +21,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/atsdb
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password
-      - SPRING_JPA_DATABASE-PLATFORM=org.hibernate.dialect.PostgreSQLDialect
-      - ATS_JWT_SECRET=9a67471b79e162125a1e2f8d227c8a4a5840d2d3e1cfcf0d491c303f8f1cfa36573c73bbec24259b
+      - PORT=8080
+      - DATABASE_URL=postgresql://postgres:password@db:5432/atsdb?schema=public
+      - JWT_SECRET=9a67471b79e162125a1e2f8d227c8a4a5840d2d3e1cfcf0d491c303f8f1cfa36573c73bbec24259b
+      - JWT_EXPIRATION_MS=86400000
     depends_on:
       - db
 
