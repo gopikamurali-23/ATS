@@ -1,9 +1,20 @@
 import prisma from '../config/db.js';
+import { sendRealTimeNotification } from '../services/notificationService.js';
 
 // 1. Schedule Interview (Company Recruiter)
 export const scheduleInterview = async (req, res, next) => {
   try {
-    const { applicationId, interviewDate, interviewTime, interviewMode, meetingLink, officeAddress, interviewRound } = req.body;
+    const {
+      applicationId,
+      interviewDate,
+      interviewTime,
+      interviewMode,
+      meetingLink,
+      officeAddress,
+      interviewRound,
+      instructions,
+      preparationTopics
+    } = req.body;
 
     if (!applicationId || !interviewDate || !interviewTime || !interviewMode || !interviewRound) {
       return res.status(400).json({ message: 'Missing required scheduling fields.' });
@@ -11,7 +22,12 @@ export const scheduleInterview = async (req, res, next) => {
 
     const application = await prisma.applications.findUnique({
       where: { id: BigInt(applicationId) },
-      include: { candidates: true }
+      include: {
+        candidates: true,
+        jobs: {
+          include: { companies: true }
+        }
+      }
     });
 
     if (!application) {
@@ -30,6 +46,7 @@ export const scheduleInterview = async (req, res, next) => {
           meeting_link: interviewMode === 'ONLINE' ? meetingLink : null,
           office_address: interviewMode === 'OFFLINE' ? officeAddress : null,
           interview_round: interviewRound,
+          instructions: instructions || null,
           status: 'SCHEDULED',
           created_at: new Date(),
           updated_at: new Date()
@@ -42,8 +59,52 @@ export const scheduleInterview = async (req, res, next) => {
         data: { status: 'UNDER_REVIEW' }
       });
 
+      // Create topic progress trackers for candidate
+      if (preparationTopics && Array.isArray(preparationTopics)) {
+        for (const topicName of preparationTopics) {
+          const prepTopic = await tx.interview_preparation_topics.create({
+            data: {
+              interview_id: interview.id,
+              name: topicName
+            }
+          });
+
+          await tx.preparation_progresses.create({
+            data: {
+              candidate_id: application.candidate_id,
+              topic_id: prepTopic.id,
+              mcq_score: null,
+              written_resp: null,
+              progress_pct: 0,
+              completed: false,
+              updated_at: new Date()
+            }
+          });
+        }
+      }
+
       return interview;
     });
+
+    // Notify candidate in real-time
+    if (application.candidates && application.candidates.user_id) {
+      const companyName = application.jobs?.companies?.name || 'Recruiter';
+      const jobTitle = application.jobs?.title || 'Position';
+
+      const formattedDate = new Date(interviewDate).toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+
+      const scheduleMsg = `Your interview for ${jobTitle} at ${companyName} has been scheduled on ${formattedDate} at ${interviewTime}.`;
+      await sendRealTimeNotification(application.candidates.user_id, scheduleMsg);
+
+      if (preparationTopics && preparationTopics.length > 0) {
+        const topicsMsg = `New interview preparation topics (${preparationTopics.join(', ')}) have been assigned for your upcoming ${interviewRound} interview.`;
+        await sendRealTimeNotification(application.candidates.user_id, topicsMsg);
+      }
+    }
 
     return res.status(200).json(scheduled);
   } catch (error) {
@@ -149,7 +210,7 @@ export const updateInterviewStatus = async (req, res, next) => {
 export const generateMockQuestions = async (req, res, next) => {
   try {
     const { skills, jobTitle, jobDescription } = req.body;
-    
+
     const skillList = Array.isArray(skills) ? skills : (skills ? skills.split(', ') : ['Java', 'JavaScript', 'SQL']);
     const title = jobTitle || 'Full Stack Engineer';
 
@@ -327,3 +388,302 @@ export const getCompanySpecificPrep = async (req, res, next) => {
     next(error);
   }
 };
+
+// 9. Fetch Candidate Assigned Prep Topics with Progress
+export const getAssignedPrepTopics = async (req, res, next) => {
+  try {
+    const candidate = await prisma.candidates.findUnique({
+      where: { user_id: req.user.id }
+    });
+
+    if (!candidate) {
+      return res.status(404).json({ message: 'Candidate profile not found' });
+    }
+
+    const progresses = await prisma.preparation_progresses.findMany({
+      where: { candidate_id: candidate.id },
+      include: {
+        topic: {
+          include: {
+            interviews: {
+              include: {
+                applications: {
+                  include: {
+                    jobs: { include: { companies: true } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Map into user-friendly structure
+    const results = progresses.map(p => ({
+      id: Number(p.id),
+      topicId: Number(p.topic_id),
+      topicName: p.topic.name,
+      mcqScore: p.mcq_score,
+      writtenResp: p.written_resp ? JSON.parse(p.written_resp) : null,
+      progressPct: p.progress_pct,
+      completed: p.completed,
+      interviewDate: p.topic.interviews?.interview_date,
+      interviewRound: p.topic.interviews?.interview_round,
+      companyName: p.topic.interviews?.applications?.jobs?.companies?.name || 'Recruiter'
+    }));
+
+    return res.status(200).json(results);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 10. Fetch Topic Theory
+export const getTopicTheory = async (req, res, next) => {
+  try {
+    const { topicId } = req.params;
+    const topic = await prisma.interview_preparation_topics.findUnique({
+      where: { id: BigInt(topicId) }
+    });
+
+    if (!topic) {
+      return res.status(404).json({ message: 'Preparation topic not found' });
+    }
+
+    // Dynamic theory content based on topic name
+    const theoryContent = {
+      topicName: topic.name,
+      explanation: `Detailed concepts study guide for ${topic.name}. Focuses on core structures, architectural constraints, and standard optimization models.`,
+      keyConcepts: [
+        `Syntax and structural semantics of ${topic.name}`,
+        `Memory management, stack-heap distribution, and garbage collection paradigms where applicable.`,
+        `Concurrency, thread safety, and resource locking mechanisms.`,
+        `Integration boundaries, service APIs, and performance scaling.`
+      ],
+      interviewQuestions: [
+        { q: `What is the primary architectural style supported by ${topic.name}?`, a: 'Depends on scope; primarily follows modular execution pipelines.' },
+        { q: `Explain the memory allocation footprint in ${topic.name}.`, a: 'Analyzed using static code allocation indexes and runtime profiling logs.' },
+        { q: `How do you avoid concurrency lock conflicts in ${topic.name}?`, a: 'Leveraging optimistic locking, immutable data states, and synchronized handlers.' }
+      ]
+    };
+
+    return res.status(200).json(theoryContent);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 11. Fetch Randomized MCQs
+export const getTopicMCQs = async (req, res, next) => {
+  try {
+    const { topicId } = req.params;
+    const topic = await prisma.interview_preparation_topics.findUnique({
+      where: { id: BigInt(topicId) }
+    });
+
+    if (!topic) {
+      return res.status(404).json({ message: 'Preparation topic not found' });
+    }
+
+    const mcqs = await prisma.mcq_questions.findMany({
+      where: { topic_name: topic.name }
+    });
+
+    // Randomize list
+    const randomized = mcqs.sort(() => 0.5 - Math.random()).slice(0, 5).map(m => ({
+      id: Number(m.id),
+      question: m.question,
+      options: JSON.parse(m.options)
+    }));
+
+    return res.status(200).json(randomized);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 12. Submit MCQ Answers
+export const submitTopicMCQs = async (req, res, next) => {
+  try {
+    const { topicId } = req.params;
+    const { answers } = req.body; // Map: questionId (Number) -> selectedOptionIndex (Number)
+
+    const topic = await prisma.interview_preparation_topics.findUnique({
+      where: { id: BigInt(topicId) }
+    });
+
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
+    const candidate = await prisma.candidates.findUnique({
+      where: { user_id: req.user.id }
+    });
+
+    // Evaluate answers
+    let correctCount = 0;
+    const qIds = Object.keys(answers).map(id => BigInt(id));
+    const questionsList = await prisma.mcq_questions.findMany({
+      where: { id: { in: qIds } }
+    });
+
+    questionsList.forEach(q => {
+      const selected = answers[q.id.toString()];
+      if (selected === q.correct_option) {
+        correctCount++;
+      }
+    });
+
+    const scorePct = questionsList.length > 0 ? Math.round((correctCount / questionsList.length) * 100) : 0;
+
+    // Fetch active progress
+    const progress = await prisma.preparation_progresses.findFirst({
+      where: { candidate_id: candidate.id, topic_id: BigInt(topicId) }
+    });
+
+    const currentWritten = progress?.written_resp;
+    const currentCompleted = progress?.completed || false;
+
+    // Calculate new progress pct: MCQs complete is 50%, Written complete is 50%
+    let newProgressPct = 50;
+    if (currentWritten) newProgressPct = 100;
+
+    await prisma.preparation_progresses.update({
+      where: { id: progress.id },
+      data: {
+        mcq_score: scorePct,
+        progress_pct: newProgressPct,
+        completed: newProgressPct === 100 ? true : currentCompleted,
+        updated_at: new Date()
+      }
+    });
+
+    return res.status(200).json({ score: scorePct, correctCount, total: questionsList.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 13. Fetch Written Questions
+export const getTopicWritten = async (req, res, next) => {
+  try {
+    const { topicId } = req.params;
+    const topic = await prisma.interview_preparation_topics.findUnique({
+      where: { id: BigInt(topicId) }
+    });
+
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
+    const questionsList = await prisma.written_questions.findMany({
+      where: { topic_name: topic.name }
+    });
+
+    const results = questionsList.slice(0, 3).map(q => ({
+      id: Number(q.id),
+      question: q.question,
+      suggestedAnswer: q.suggested_answer
+    }));
+
+    return res.status(200).json(results);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 14. Submit Written Responses
+export const submitTopicWritten = async (req, res, next) => {
+  try {
+    const { topicId } = req.params;
+    const { responses } = req.body; // Map: questionId (Number) -> answer text (String)
+
+    const topic = await prisma.interview_preparation_topics.findUnique({
+      where: { id: BigInt(topicId) },
+      include: {
+        interviews: {
+          include: {
+            applications: {
+              include: {
+                jobs: {
+                  include: {
+                    companies: {
+                      include: { users: true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
+    const candidate = await prisma.candidates.findUnique({
+      where: { user_id: req.user.id }
+    });
+
+    const progress = await prisma.preparation_progresses.findFirst({
+      where: { candidate_id: candidate.id, topic_id: BigInt(topicId) }
+    });
+
+    const hasMcq = progress?.mcq_score !== null;
+    let newProgressPct = 50;
+    if (hasMcq) newProgressPct = 100;
+
+    await prisma.preparation_progresses.update({
+      where: { id: progress.id },
+      data: {
+        written_resp: JSON.stringify(responses),
+        progress_pct: newProgressPct,
+        completed: true,
+        updated_at: new Date()
+      }
+    });
+
+    // Notify recruiter that candidate completed preparation!
+    const companyUserId = topic.interviews?.applications?.jobs?.companies?.user_id;
+    if (companyUserId) {
+      const candidateName = `${candidate.first_name} ${candidate.last_name}`;
+      const alertMsg = `Candidate ${candidateName} has submitted interview preparation tasks for ${topic.name}.`;
+      await sendRealTimeNotification(companyUserId, alertMsg);
+    }
+
+    return res.status(200).json({ message: 'Written responses submitted successfully', progress: newProgressPct });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 15. Fetch Mock Questions
+export const getTopicMocks = async (req, res, next) => {
+  try {
+    const { topicId } = req.params;
+    const topic = await prisma.interview_preparation_topics.findUnique({
+      where: { id: BigInt(topicId) }
+    });
+
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
+    // Generate 5 random mock questions
+    const mocks = [
+      `Design a scalable database schema to handle comments for topic ${topic.name}.`,
+      `Explain a major performance bottleneck you encountered while scaling a ${topic.name} service.`,
+      `Describe security best practices for production deployment of ${topic.name} structures.`,
+      `How does garbage collection or memory mapping affect concurrency execution in ${topic.name}?`,
+      `Describe how you would debug a slow API endpoint relying on ${topic.name}.`
+    ];
+
+    return res.status(200).json(mocks);
+  } catch (error) {
+    next(error);
+  }
+};
+

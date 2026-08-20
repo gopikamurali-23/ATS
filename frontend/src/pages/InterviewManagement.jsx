@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { 
-  Calendar, Clock, Video, MapPin, Check, X, 
-  RefreshCw, ExternalLink, Sparkles, Loader, AlertCircle, 
-  HelpCircle, ChevronRight, Award, MessageSquare 
+import {
+  Calendar, Clock, Video, MapPin, Check, X,
+  RefreshCw, ExternalLink, Sparkles, Loader, AlertCircle,
+  HelpCircle, ChevronRight, Award, MessageSquare
 } from 'lucide-react';
 
 const InterviewManagement = () => {
@@ -13,7 +13,7 @@ const InterviewManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  
+
   // Reschedule modal states
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedInterviewId, setSelectedInterviewId] = useState(null);
@@ -80,14 +80,13 @@ const InterviewManagement = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-      
+
       {/* Toast Alert */}
       {(successMsg || error) && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl border shadow-xl transition-all duration-300 ${
-          successMsg 
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 backdrop-blur-md' 
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl border shadow-xl transition-all duration-300 ${successMsg
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 backdrop-blur-md'
             : 'bg-rose-500/10 border-rose-500/30 text-rose-400 backdrop-blur-md'
-        }`}>
+          }`}>
           {successMsg ? <Check className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
           <span className="text-sm font-semibold">{successMsg || error}</span>
         </div>
@@ -115,10 +114,10 @@ const InterviewManagement = () => {
             const app = item.applications;
             const job = app?.jobs;
             const company = job?.companies;
-            
+
             return (
-              <div 
-                key={item.id.toString()} 
+              <div
+                key={item.id.toString()}
                 className="glass border border-slate-200/50 dark:border-slate-800/55 bg-white/40 dark:bg-slate-900/40 rounded-3xl p-6 flex flex-col justify-between hover:shadow-lg transition-all space-y-6"
               >
                 {/* Header detail */}
@@ -159,7 +158,7 @@ const InterviewManagement = () => {
                         <span className="font-semibold text-emerald-600 dark:text-emerald-400">Virtual / Online Meeting</span>
                       </div>
                       {item.meeting_link && item.status === 'ACCEPTED' && (
-                        <a 
+                        <a
                           href={item.meeting_link}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -221,18 +220,31 @@ const InterviewManagement = () => {
                   )}
 
                   {item.status === 'ACCEPTED' && (
-                    <button
-                      onClick={() => navigate('/applicant/interview-prep', { 
-                        state: { 
-                          jobTitle: job?.title, 
-                          skills: job?.job_skills?.map(s => s.skill).join(', '),
-                          companyName: company?.name
-                        } 
-                      })}
-                      className="w-full py-3 bg-gradient-to-r from-brand-600 to-indigo-500 hover:from-brand-700 hover:to-indigo-600 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-brand-500/10 animate-pulse"
-                    >
-                      <Sparkles className="h-4 w-4" /> AI Interview Prep Portal
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full">
+                      <button
+                        onClick={() => navigate('/applicant/interview-prep', {
+                          state: {
+                            jobTitle: job?.title,
+                            skills: job?.job_skills?.map(s => s.skill).join(', '),
+                            companyName: company?.name
+                          }
+                        })}
+                        className="flex-1 py-3 bg-gradient-to-r from-brand-600 to-indigo-500 hover:from-brand-700 hover:to-indigo-600 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-brand-500/10"
+                      >
+                        <Sparkles className="h-4 w-4" /> Prep Portal
+                      </button>
+                      <button
+                        onClick={() => navigate('/applicant/messages', {
+                          state: {
+                            companyUserId: company?.user_id ? Number(company.user_id) : null,
+                            recipientName: company?.name
+                          }
+                        })}
+                        className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <MessageSquare className="h-4 w-4" /> Message
+                      </button>
+                    </div>
                   )}
 
                   {(item.status === 'REJECTED' || item.status === 'RESCHEDULE_REQUESTED') && (

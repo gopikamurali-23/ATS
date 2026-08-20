@@ -88,6 +88,8 @@ model candidates {
   candidate_skills     candidate_skills[]
   users                users?                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkme4fkelukmx2s63tlcrft6hio")
   builder_resumes      builder_resumes[]
+  chat_conversations   chat_conversations[]
+  preparation_progresses preparation_progresses[]
 }
 
 model companies {
@@ -100,6 +102,7 @@ model companies {
   user_id     BigInt? @unique(map: "uk_5xg6ed73n32iai9psir68pia9")
   users       users?  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk9l5d0fem75e59uwf9upwuf9du")
   jobs        jobs[]
+  chat_conversations chat_conversations[]
 }
 
 model job_keywords {
@@ -137,13 +140,15 @@ model jobs {
 }
 
 model users {
-  id         BigInt      @id @default(autoincrement())
-  email      String      @unique(map: "uk_6dotkott2kjsp8vw4d0m25fb7") @db.VarChar(255)
-  password   String      @db.VarChar(255)
-  role       String      @db.VarChar(255)
-  username   String      @unique(map: "uk_r43af9ap4edm43mmtq01oddj6") @db.VarChar(255)
-  candidates candidates?
-  companies  companies?
+  id            BigInt      @id @default(autoincrement())
+  email         String      @unique(map: "uk_6dotkott2kjsp8vw4d5m25fb7") @db.VarChar(255)
+  password      String      @db.VarChar(255)
+  role          String      @db.VarChar(255)
+  username      String      @unique(map: "uk_r43af9ap4edm43mmtq01oddj6") @db.VarChar(255)
+  candidates    candidates?
+  companies     companies?
+  notifications notifications[]
+  chat_messages chat_messages[]
 }
 
 model builder_resumes {
@@ -178,8 +183,77 @@ model interviews {
   interview_round   String       @db.VarChar(100)
   status            String       @default("SCHEDULED") @db.VarChar(100)
   reschedule_reason String?      @db.Text
+  instructions      String?      @db.Text
   created_at        DateTime?    @default(now()) @db.Timestamp(6)
   updated_at        DateTime?    @default(now()) @db.Timestamp(6)
   application_id    BigInt
   applications      applications @relation(fields: [application_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  preparation_topics interview_preparation_topics[]
+}
+
+model interview_preparation_topics {
+  id           BigInt     @id @default(autoincrement())
+  interview_id BigInt
+  name         String     @db.VarChar(255)
+  created_at   DateTime?  @default(now()) @db.Timestamp(6)
+  interviews   interviews @relation(fields: [interview_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  progress     preparation_progresses[]
+}
+
+model notifications {
+  id          BigInt    @id @default(autoincrement())
+  user_id     BigInt
+  text        String    @db.Text
+  is_read     Boolean   @default(false)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model chat_conversations {
+  id           BigInt       @id @default(autoincrement())
+  candidate_id BigInt
+  company_id   BigInt
+  created_at   DateTime?    @default(now()) @db.Timestamp(6)
+  candidates   candidates   @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  companies    companies    @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages     chat_messages[]
+}
+
+model chat_messages {
+  id              BigInt             @id @default(autoincrement())
+  conversation_id BigInt
+  sender_id       BigInt
+  text            String             @db.Text
+  is_read         Boolean            @default(false)
+  created_at      DateTime?          @default(now()) @db.Timestamp(6)
+  conversation    chat_conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sender          users              @relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model preparation_progresses {
+  id           BigInt                       @id @default(autoincrement())
+  candidate_id BigInt
+  topic_id     BigInt
+  mcq_score    Float?
+  written_resp String?                      @db.Text
+  progress_pct Float                        @default(0)
+  completed    Boolean                      @default(false)
+  updated_at   DateTime?                    @default(now()) @db.Timestamp(6)
+  candidates   candidates                   @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  topic        interview_preparation_topics @relation(fields: [topic_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model mcq_questions {
+  id             BigInt  @id @default(autoincrement())
+  topic_name     String  @db.VarChar(255)
+  question       String  @db.Text
+  options        String  @db.Text
+  correct_option Int
+}
+
+model written_questions {
+  id               BigInt  @id @default(autoincrement())
+  topic_name       String  @db.VarChar(255)
+  question         String  @db.Text
+  suggested_answer String? @db.Text
 }

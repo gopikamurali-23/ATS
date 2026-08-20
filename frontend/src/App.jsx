@@ -28,6 +28,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AiResumeBuilder from './pages/AiResumeBuilder';
 import InterviewManagement from './pages/InterviewManagement';
 import AiInterviewPrep from './pages/AiInterviewPrep';
+import ChatSystem from './pages/ChatSystem';
 import { useAuth } from './context/AuthContext';
 
 function App() {
@@ -129,6 +130,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/applicant/messages"
+              element={
+                <ProtectedRoute allowedRoles={['APPLICANT']}>
+                  <ChatSystem />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected Company Routes */}
             <Route
@@ -171,6 +180,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/company/messages"
+              element={
+                <ProtectedRoute allowedRoles={['COMPANY']}>
+                  <ChatSystem />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin Dashboard */}
             <Route
@@ -188,7 +205,7 @@ function App() {
             <Route path="/jobs" element={<Navigate to="/applicant/jobs" replace />} />
             <Route path="/jobs/:id" element={<Navigate to={`/applicant/jobs/${window.location.pathname.split('/').pop()}`} replace />} />
             <Route path="/candidate" element={<Navigate to="/applicant/dashboard" replace />} />
-            
+
             {/* Fallback to Root */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

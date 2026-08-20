@@ -12,6 +12,7 @@ export const convertToApplicationDto = (app, res) => {
   const dto = {
     id: app.id,
     candidateId: app.candidates ? app.candidates.id : app.candidate_id,
+    candidateUserId: app.candidates ? Number(app.candidates.user_id) : null,
     candidateName: app.candidates ? `${app.candidates.first_name} ${app.candidates.last_name}` : '',
     candidateEmail: app.candidates && app.candidates.users ? app.candidates.users.email : '',
     candidatePhone: app.candidates ? app.candidates.phone : '',
@@ -20,9 +21,18 @@ export const convertToApplicationDto = (app, res) => {
     jobId: app.jobs ? app.jobs.id : app.job_id,
     jobTitle: app.jobs ? app.jobs.title : '',
     companyName: app.jobs && app.jobs.companies ? app.jobs.companies.name : '',
+    companyUserId: app.jobs && app.jobs.companies ? Number(app.jobs.companies.user_id) : null,
     status: app.status,
     appliedAt: app.applied_at,
-    analyzed: !!res
+    analyzed: !!res,
+    interviews: app.interviews ? app.interviews.map(i => ({
+      id: Number(i.id),
+      interviewDate: i.interview_date,
+      interviewTime: i.interview_time,
+      interviewMode: i.interview_mode,
+      interviewRound: i.interview_round,
+      status: i.status
+    })) : []
   };
 
   if (res) {
@@ -44,7 +54,7 @@ export const convertToApplicationDto = (app, res) => {
     dto.missingKeywords = res.missing_keywords ? res.missing_keywords.split(', ').filter(Boolean) : [];
     dto.recommendedCertifications = res.recommended_certifications ? res.recommended_certifications.split(', ').filter(Boolean) : [];
     dto.improvementSuggestions = res.improvement_suggestions ? res.improvement_suggestions.split('. ').filter(Boolean) : [];
-    
+
     dto.communicationMatchScore = res.communication_match_score ?? 0;
     dto.skillBySkillScores = res.skill_by_skill_scores ? JSON.parse(res.skill_by_skill_scores) : {};
     dto.projectScoresBreakdown = res.project_scores_breakdown ? JSON.parse(res.project_scores_breakdown) : {};
@@ -252,7 +262,8 @@ export const getApplicationById = async (req, res, next) => {
       where: { id: BigInt(id) },
       include: {
         candidates: { include: { users: true } },
-        jobs: { include: { companies: true } }
+        jobs: { include: { companies: true } },
+        interviews: true
       }
     });
 
@@ -265,6 +276,13 @@ export const getApplicationById = async (req, res, next) => {
       result = await prisma.ats_results.findUnique({
         where: { application_id: BigInt(id) }
       });
+    } else {
+      // Verify ownership before providing ATS details to candidates
+      if (app.candidates && app.candidates.user_id === BigInt(req.user.id)) {
+        result = await prisma.ats_results.findUnique({
+          where: { application_id: BigInt(id) }
+        });
+      }
     }
 
     return res.status(200).json(convertToApplicationDto(app, result));
@@ -295,7 +313,8 @@ export const updateStatus = async (req, res, next) => {
       data: { status },
       include: {
         candidates: { include: { users: true } },
-        jobs: { include: { companies: true } }
+        jobs: { include: { companies: true } },
+        interviews: true
       }
     });
 
@@ -323,13 +342,17 @@ export const getCandidateApplications = async (req, res, next) => {
       where: { candidate_id: candidate.id },
       include: {
         candidates: { include: { users: true } },
-        jobs: { include: { companies: true } }
+        jobs: { include: { companies: true } },
+        interviews: true
       }
     });
 
     const list = [];
     for (const app of apps) {
-      list.push(convertToApplicationDto(app, null));
+      const resVal = await prisma.ats_results.findUnique({
+        where: { application_id: app.id }
+      });
+      list.push(convertToApplicationDto(app, resVal));
     }
 
     return res.status(200).json(list);
@@ -354,7 +377,8 @@ export const getCompanyApplications = async (req, res, next) => {
       },
       include: {
         candidates: { include: { users: true } },
-        jobs: { include: { companies: true } }
+        jobs: { include: { companies: true } },
+        interviews: true
       }
     });
 
@@ -383,7 +407,8 @@ export const getJobApplications = async (req, res, next) => {
       where: { job_id: BigInt(jobId) },
       include: {
         candidates: { include: { users: true } },
-        jobs: { include: { companies: true } }
+        jobs: { include: { companies: true } },
+        interviews: true
       }
     });
 
@@ -643,7 +668,7 @@ export const uploadResumeFromUrl = async (req, res, next) => {
     // Determine extension from content-type or filename
     let extension = '.pdf'; // default
     const contentType = fetchResponse.headers.get('content-type') || '';
-    
+
     // Parse filename from URL
     const parsedUrl = new URL(url);
     const pathname = parsedUrl.pathname;
@@ -777,7 +802,7 @@ export const applyToJobFromUrl = async (req, res, next) => {
     // Determine extension from content-type or filename
     let extension = '.pdf'; // default
     const contentType = fetchResponse.headers.get('content-type') || '';
-    
+
     // Parse filename from URL
     const parsedUrl = new URL(url);
     const pathname = parsedUrl.pathname;
@@ -974,10 +999,10 @@ export const applyToJobWithExistingResume = async (req, res, next) => {
     }
 
     // Find local file path
-    const relativePath = candidate.resume_url.startsWith('/') 
-      ? candidate.resume_url.substring(1) 
+    const relativePath = candidate.resume_url.startsWith('/')
+      ? candidate.resume_url.substring(1)
       : candidate.resume_url;
-      
+
     const absolutePath = path.resolve(relativePath);
     if (!fs.existsSync(absolutePath)) {
       return res.status(400).json({ message: 'Resume document file could not be found on the server. Please re-upload your resume.' });

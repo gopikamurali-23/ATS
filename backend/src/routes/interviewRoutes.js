@@ -7,7 +7,14 @@ import {
   generateMockQuestions,
   submitMockAnswer,
   evaluateMockInterview,
-  getCompanySpecificPrep
+  getCompanySpecificPrep,
+  getAssignedPrepTopics,
+  getTopicTheory,
+  getTopicMCQs,
+  submitTopicMCQs,
+  getTopicWritten,
+  submitTopicWritten,
+  getTopicMocks
 } from '../controllers/interviewController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -24,5 +31,14 @@ router.post('/prep/generate-questions', authenticate, authorize('ROLE_CANDIDATE'
 router.post('/prep/mock-submit', authenticate, authorize('ROLE_CANDIDATE'), submitMockAnswer);
 router.post('/prep/evaluate', authenticate, authorize('ROLE_CANDIDATE'), evaluateMockInterview);
 router.get('/prep/company-specific/:companyName', authenticate, authorize('ROLE_CANDIDATE'), getCompanySpecificPrep);
+
+// Assigned Preparation Portal
+router.get('/prep/topics', authenticate, authorize('ROLE_CANDIDATE'), getAssignedPrepTopics);
+router.get('/prep/topic/:topicId/theory', authenticate, authorize('ROLE_CANDIDATE'), getTopicTheory);
+router.get('/prep/topic/:topicId/mcqs', authenticate, authorize('ROLE_CANDIDATE'), getTopicMCQs);
+router.post('/prep/topic/:topicId/mcq-submit', authenticate, authorize('ROLE_CANDIDATE'), submitTopicMCQs);
+router.get('/prep/topic/:topicId/written', authenticate, authorize('ROLE_CANDIDATE'), getTopicWritten);
+router.post('/prep/topic/:topicId/written-submit', authenticate, authorize('ROLE_CANDIDATE'), submitTopicWritten);
+router.get('/prep/topic/:topicId/mocks', authenticate, authorize('ROLE_CANDIDATE'), getTopicMocks);
 
 export default router;

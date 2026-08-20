@@ -43,13 +43,18 @@ const LandingPage = () => {
                 Scan your resume against target job roles, view matching sub-scores, highlight missing skills, and instantly track applications with real-time feedback.
               </p>
             </div>
-            <div className="pt-6">
+            <div className="pt-6 flex gap-3">
               <Link
                 to="/applicant/login"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl transition-all shadow-md cursor-pointer group-hover:gap-3"
+                className="flex-1 text-center py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl transition-all shadow-md cursor-pointer text-xs"
               >
-                <span>Enter Applicant Portal</span>
-                <ArrowRight className="h-4 w-4" />
+                Login
+              </Link>
+              <Link
+                to="/applicant/register"
+                className="flex-1 text-center py-3 border border-brand-500/30 text-brand-600 hover:bg-brand-50/50 dark:text-brand-400 dark:hover:bg-slate-850/45 font-semibold rounded-xl transition-all cursor-pointer text-xs"
+              >
+                Register
               </Link>
             </div>
           </div>
@@ -65,13 +70,18 @@ const LandingPage = () => {
                 Publish open vacancies, screen and filter submitted candidate profiles dynamically, evaluate AI-driven match breakdowns, and hire the top talent in seconds.
               </p>
             </div>
-            <div className="pt-6">
+            <div className="pt-6 flex gap-3">
               <Link
                 to="/company/login"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-md cursor-pointer group-hover:gap-3"
+                className="flex-1 text-center py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-md cursor-pointer text-xs"
               >
-                <span>Enter Recruiter Portal</span>
-                <ArrowRight className="h-4 w-4" />
+                Login
+              </Link>
+              <Link
+                to="/company/register"
+                className="flex-1 text-center py-3 border border-indigo-500/30 text-indigo-600 hover:bg-indigo-50/50 dark:text-indigo-400 dark:hover:bg-slate-850/45 font-semibold rounded-xl transition-all cursor-pointer text-xs"
+              >
+                Register
               </Link>
             </div>
           </div>

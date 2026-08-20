@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { 
-  Loader, Users, FileText, CheckCircle, BarChart2, Eye, 
-  ShieldAlert, BrainCircuit, Sparkles, Search, Calendar, 
-  Clock, Video, MapPin, Check, Plus, AlertCircle, 
-  TrendingUp, Award, Zap, HelpCircle, Columns
+import {
+  Loader, Users, FileText, CheckCircle, BarChart2, Eye,
+  ShieldAlert, BrainCircuit, Sparkles, Search, Calendar,
+  Clock, Video, MapPin, Check, Plus, AlertCircle,
+  TrendingUp, Award, Zap, HelpCircle, Columns, MessageSquare
 } from 'lucide-react';
 import { openResumeUrl } from '../utils/documentHelper';
 
@@ -52,16 +52,16 @@ const RadarChart = ({ scores }) => {
         {/* Outer Grid polygon */}
         <polygon points={outerPoints} fill="none" className="stroke-slate-200 dark:stroke-slate-800" strokeWidth="1" />
         <polygon points={midPoints} fill="none" className="stroke-slate-200 dark:stroke-slate-800" strokeWidth="1" strokeDasharray="3" />
-        
+
         {/* Core axes */}
         {keys.map((_, i) => {
           const outer = getCoordinates(i, 100);
           return (
-            <line 
-              key={i} 
-              x1={center} y1={center} x2={outer.x} y2={outer.y} 
-              className="stroke-slate-200 dark:stroke-slate-800" 
-              strokeWidth="1" 
+            <line
+              key={i}
+              x1={center} y1={center} x2={outer.x} y2={outer.y}
+              className="stroke-slate-200 dark:stroke-slate-800"
+              strokeWidth="1"
             />
           );
         })}
@@ -70,11 +70,11 @@ const RadarChart = ({ scores }) => {
         {keys.map((label, i) => {
           const coord = getCoordinates(i, 115);
           return (
-            <text 
-              key={i} 
-              x={coord.x} y={coord.y} 
-              textAnchor="middle" 
-              alignmentBaseline="middle" 
+            <text
+              key={i}
+              x={coord.x} y={coord.y}
+              textAnchor="middle"
+              alignmentBaseline="middle"
               className="fill-slate-400 dark:fill-slate-500 font-bold text-[9px] uppercase tracking-wider"
             >
               {label}
@@ -84,16 +84,16 @@ const RadarChart = ({ scores }) => {
 
         {/* Active data area */}
         <polygon points={activePoints} fill="rgba(99, 102, 241, 0.2)" className="stroke-brand-500" strokeWidth="2" />
-        
+
         {/* Dots */}
         {keys.map((_, i) => {
           const coord = getCoordinates(i, data[i]);
           return (
-            <circle 
-              key={i} 
-              cx={coord.x} cy={coord.y} r="3.5" 
-              className="fill-indigo-500 stroke-white dark:stroke-slate-900" 
-              strokeWidth="1" 
+            <circle
+              key={i}
+              cx={coord.x} cy={coord.y} r="3.5"
+              className="fill-indigo-500 stroke-white dark:stroke-slate-900"
+              strokeWidth="1"
             />
           );
         })}
@@ -104,12 +104,13 @@ const RadarChart = ({ scores }) => {
 
 const CompanyCandidates = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ type: '', text: '' });
-  
+
   // Filters
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState('');
@@ -128,7 +129,9 @@ const CompanyCandidates = () => {
     interviewMode: 'ONLINE',
     meetingLink: '',
     officeAddress: '',
-    interviewRound: 'Technical'
+    interviewRound: 'Technical',
+    instructions: '',
+    preparationTopics: []
   });
   const [schedulingLoader, setSchedulingLoader] = useState(false);
 
@@ -193,7 +196,7 @@ const CompanyCandidates = () => {
       await api.post('/api/interviews/schedule', payload);
       triggerToast('success', 'Interview round scheduled successfully. Candidate has been notified.');
       setShowScheduleModal(false);
-      
+
       // Reset form
       setScheduleData({
         interviewDate: '',
@@ -201,7 +204,9 @@ const CompanyCandidates = () => {
         interviewMode: 'ONLINE',
         meetingLink: '',
         officeAddress: '',
-        interviewRound: 'Technical'
+        interviewRound: 'Technical',
+        instructions: '',
+        preparationTopics: []
       });
       fetchCandidatesData(); // reload status changes
     } catch (err) {
@@ -232,8 +237,8 @@ const CompanyCandidates = () => {
 
   // Filter logic
   const filteredApps = applications.filter((app) => {
-    const matchesSearch = app.candidateName.toLowerCase().includes(search.toLowerCase()) || 
-                          app.candidateTitle.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = app.candidateName.toLowerCase().includes(search.toLowerCase()) ||
+      app.candidateTitle.toLowerCase().includes(search.toLowerCase());
     const matchesJob = selectedJobId === '' || app.jobId === BigInt(selectedJobId);
     const matchesStatus = selectedStatus === '' || app.status === selectedStatus;
     return matchesSearch && matchesJob && matchesStatus;
@@ -249,14 +254,13 @@ const CompanyCandidates = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-      
+
       {/* Toast Alert */}
       {toast.text && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl border shadow-xl transition-all duration-300 ${
-          toast.type === 'success' 
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 backdrop-blur-md' 
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl border shadow-xl transition-all duration-300 ${toast.type === 'success'
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 backdrop-blur-md'
             : 'bg-rose-500/10 border-rose-500/30 text-rose-400 backdrop-blur-md'
-        }`}>
+          }`}>
           {toast.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
           <span className="text-sm font-semibold">{toast.text}</span>
         </div>
@@ -383,6 +387,27 @@ const CompanyCandidates = () => {
                       <td className="px-6 py-4 text-right space-x-2">
                         <button
                           onClick={() => {
+                            if (app.interviews && app.interviews.length > 0) {
+                              navigate('/company/messages', {
+                                state: {
+                                  candidateId: app.candidateId,
+                                  candidateUserId: app.candidateUserId,
+                                  recipientName: app.candidateName
+                                }
+                              });
+                            }
+                          }}
+                          disabled={!app.interviews || app.interviews.length === 0}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${app.interviews && app.interviews.length > 0
+                              ? 'bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-500'
+                              : 'bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                            }`}
+                          title={app.interviews && app.interviews.length > 0 ? "Message Candidate" : "Schedule an interview first to unlock messaging."}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" /> Message
+                        </button>
+                        <button
+                          onClick={() => {
                             setScheduleAppId(app.id);
                             setShowScheduleModal(true);
                           }}
@@ -411,7 +436,7 @@ const CompanyCandidates = () => {
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex justify-end transition-opacity">
           <div className="w-full max-w-2xl bg-white dark:bg-slate-900 h-full p-8 overflow-y-auto shadow-2xl flex flex-col justify-between border-l border-slate-200/50 dark:border-slate-800/40 animate-slide-in">
             <div className="space-y-6">
-              
+
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">{selectedApp.candidateName}</h2>
@@ -460,7 +485,7 @@ const CompanyCandidates = () => {
 
               {/* Sub-score grid and radar map */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <RadarChart 
+                <RadarChart
                   scores={{
                     Skills: selectedApp.skillMatchScore,
                     Experience: selectedApp.experienceMatchScore,
@@ -573,21 +598,44 @@ const CompanyCandidates = () => {
 
             </div>
 
-            <div className="flex gap-4 pt-6 border-t border-slate-200/50 dark:border-slate-800/30 mt-6">
+            <div className="flex flex-col gap-3 pt-6 border-t border-slate-200/50 dark:border-slate-800/30 mt-6">
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setScheduleAppId(selectedApp.id);
+                    setShowScheduleModal(true);
+                  }}
+                  className="flex-1 py-3 text-sm font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-sm text-center"
+                >
+                  Schedule Round
+                </button>
+                <button
+                  onClick={() => handleUpdateStatus(selectedApp.id, 'SHORTLISTED')}
+                  className="flex-1 py-3 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm"
+                >
+                  Shortlist Candidate
+                </button>
+              </div>
               <button
                 onClick={() => {
-                  setScheduleAppId(selectedApp.id);
-                  setShowScheduleModal(true);
+                  if (selectedApp.interviews && selectedApp.interviews.length > 0) {
+                    navigate('/company/messages', {
+                      state: {
+                        candidateId: selectedApp.candidateId,
+                        candidateUserId: selectedApp.candidateUserId,
+                        recipientName: selectedApp.candidateName
+                      }
+                    });
+                  }
                 }}
-                className="flex-1 py-3 text-sm font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-sm text-center"
+                disabled={!selectedApp.interviews || selectedApp.interviews.length === 0}
+                className={`w-full py-3 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${selectedApp.interviews && selectedApp.interviews.length > 0
+                    ? 'bg-brand-600 hover:bg-brand-700 text-white cursor-pointer shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-650 cursor-not-allowed border border-slate-200 dark:border-slate-800'
+                  }`}
+                title={selectedApp.interviews && selectedApp.interviews.length > 0 ? "Message Candidate" : "Schedule an interview first to unlock messaging."}
               >
-                Schedule Round
-              </button>
-              <button
-                onClick={() => handleUpdateStatus(selectedApp.id, 'SHORTLISTED')}
-                className="flex-1 py-3 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm"
-              >
-                Shortlist Candidate
+                <MessageSquare className="h-4 w-4" /> Message Candidate
               </button>
             </div>
 
@@ -599,7 +647,7 @@ const CompanyCandidates = () => {
       {showCompareModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex justify-center items-center p-4">
           <div className="w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-3xl p-6 md:p-8 overflow-y-auto max-h-[90vh] shadow-2xl animate-fade-in space-y-6">
-            
+
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -618,13 +666,13 @@ const CompanyCandidates = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
               {selectedForCompare.map((app) => (
                 <div key={app.id} className="p-5 border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/30 rounded-3xl space-y-5 relative">
-                  <button 
+                  <button
                     onClick={() => handleSelectCompare(app)}
                     className="absolute top-4 right-4 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 px-2.5 py-1 rounded-lg"
                   >
                     Remove
                   </button>
-                  
+
                   <div>
                     <h4 className="text-base font-extrabold text-slate-950 dark:text-white">{app.candidateName}</h4>
                     <span className="text-[10px] text-slate-450 uppercase font-bold tracking-wider">{app.candidateTitle}</span>
@@ -679,7 +727,7 @@ const CompanyCandidates = () => {
                       </p>
                     </div>
                   )}
-                  
+
                   <div className="pt-2 flex gap-2">
                     <button
                       onClick={() => {
@@ -711,7 +759,7 @@ const CompanyCandidates = () => {
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex justify-center items-center p-4">
           <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-4 shadow-2xl animate-fade-in">
-            
+
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -804,6 +852,49 @@ const CompanyCandidates = () => {
                   />
                 </div>
               )}
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Additional Instructions</label>
+                <textarea
+                  rows={2}
+                  value={scheduleData.instructions}
+                  onChange={(e) => setScheduleData({ ...scheduleData, instructions: e.target.value })}
+                  placeholder="Please bring a copy of your resume. Review code design patterns before the meeting."
+                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Assign Preparation Topics</label>
+                <div className="grid grid-cols-2 gap-2 p-3.5 rounded-xl border border-slate-200 dark:border-slate-850/50 bg-slate-50/50 dark:bg-slate-950/20">
+                  {['Java', 'Spring Boot', 'React.js', 'SQL', 'Data Structures', 'System Design'].map((topic) => {
+                    const isChecked = scheduleData.preparationTopics.includes(topic);
+                    return (
+                      <label key={topic} className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-350 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setScheduleData({
+                                ...scheduleData,
+                                preparationTopics: scheduleData.preparationTopics.filter(t => t !== topic)
+                              });
+                            } else {
+                              setScheduleData({
+                                ...scheduleData,
+                                preparationTopics: [...scheduleData.preparationTopics, topic]
+                              });
+                            }
+                          }}
+                          className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-800 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                        />
+                        {topic}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <button

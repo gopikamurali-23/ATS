@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import PDFDocument from 'pdfkit';
 
 // AI Professional Summary Generator
 export const generateSummary = async (req, res, next) => {
@@ -7,7 +8,7 @@ export const generateSummary = async (req, res, next) => {
 
     const skillList = Array.isArray(skills) ? skills : (skills ? skills.split(',') : []);
     const expCount = Array.isArray(experience) ? experience.length : 0;
-    
+
     // Generate context-aware professional summaries (simulate LLM)
     const options = [
       `Results-driven ${title || 'Professional'} with ${expCount > 0 ? expCount + '+' : 'several'} years of hands-on experience in the industry. Expertise in ${skillList.slice(0, 3).join(', ') || 'software development'}. Proven record of delivering high-quality deliverables and collaborating with cross-functional teams to achieve project objectives.`,
@@ -80,14 +81,14 @@ export const improveGrammar = async (req, res, next) => {
 
     // Capitalize, fix basic punctuation, rephrase weak words (simulate LLM)
     let improved = text.trim();
-    
+
     // Simple mock grammar fixes
     improved = improved.replace(/\bi did\b/gi, 'Successfully delivered');
     improved = improved.replace(/\bi made\b/gi, 'Architected and built');
     improved = improved.replace(/\bi was responsible for\b/gi, 'Managed and spearheaded');
     improved = improved.replace(/\bi worked on\b/gi, 'Contributed to the engineering of');
     improved = improved.replace(/\bi helped\b/gi, 'Collaborated with team members to enhance');
-    
+
     // Capitalize first letter
     improved = improved.charAt(0).toUpperCase() + improved.slice(1);
     if (!improved.endsWith('.')) {
@@ -291,13 +292,49 @@ export const exportResume = async (req, res, next) => {
     }
 
     // Convert saved fields to strings if parsed
-    const eduList = resume.education ? JSON.parse(resume.education) : [];
-    const expList = resume.experience ? JSON.parse(resume.experience) : [];
-    const skillList = resume.skills ? JSON.parse(resume.skills) : [];
-    const projList = resume.projects ? JSON.parse(resume.projects) : [];
-    const certList = resume.certifications ? JSON.parse(resume.certifications) : [];
+    let eduList = [];
+    try {
+      eduList = resume.education ? JSON.parse(resume.education) : [];
+    } catch (e) {
+      eduList = typeof resume.education === 'string' ? [{ degree: resume.education, school: '', year: '' }] : [];
+    }
 
-    // Draft a structured markdown/text format representation
+    let expList = [];
+    try {
+      expList = resume.experience ? JSON.parse(resume.experience) : [];
+    } catch (e) {
+      expList = typeof resume.experience === 'string' ? [{ company: '', role: '', duration: '', description: resume.experience }] : [];
+    }
+
+    let skillList = [];
+    try {
+      skillList = resume.skills ? JSON.parse(resume.skills) : [];
+    } catch (e) {
+      skillList = typeof resume.skills === 'string' ? resume.skills.split(',').map(s => s.trim()) : [];
+    }
+
+    let projList = [];
+    try {
+      projList = resume.projects ? JSON.parse(resume.projects) : [];
+    } catch (e) {
+      projList = typeof resume.projects === 'string' ? [{ title: resume.projects, description: '' }] : [];
+    }
+
+    let certList = [];
+    try {
+      certList = resume.certifications ? JSON.parse(resume.certifications) : [];
+    } catch (e) {
+      certList = typeof resume.certifications === 'string' ? [{ title: resume.certifications, issuer: '', year: '' }] : [];
+    }
+
+    // Clean lists of empty items
+    eduList = eduList.filter(edu => edu && (edu.degree || edu.school || edu.year));
+    expList = expList.filter(exp => exp && (exp.role || exp.company || exp.duration || exp.description));
+    skillList = skillList.filter(s => s && s.trim() !== '');
+    projList = projList.filter(p => p && (p.title || p.description));
+    certList = certList.filter(c => c && (c.title || c.issuer || c.year));
+
+    // Draft a structured markdown/text format representation for DOCX
     let docContent = '';
     docContent += `==========================================\n`;
     docContent += `${resume.name.toUpperCase()}\n`;
@@ -355,12 +392,151 @@ export const exportResume = async (req, res, next) => {
 
     // Set headers for download
     const filename = `${resume.name.replace(/\s+/g, '_')}_Resume_v${resume.version}`;
-    
+
     if (format === 'pdf') {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=${filename}.pdf`);
-      // PDF is simulated as a text-PDF format here
-      return res.send(Buffer.from(docContent));
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 40, bottom: 45, left: 45, right: 45 }
+      });
+
+      const buffers = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        const pdfData = Buffer.concat(buffers);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.pdf`);
+        return res.send(pdfData);
+      });
+
+      // Style configurations based on selected template
+      const isModern = resume.template === 'Modern';
+      const isExecutive = resume.template === 'Executive';
+      const isAts = resume.template === 'ATS Friendly';
+
+      const primaryColor = isModern ? '#4f46e5' : (isExecutive ? '#1e293b' : (isAts ? '#000000' : '#1e3a8a'));
+      const textColor = isAts ? '#000000' : '#334155';
+      const titleColor = isAts ? '#000000' : '#0f172a';
+      const fontName = isExecutive ? 'Times-Roman' : 'Helvetica';
+      const fontBold = isExecutive ? 'Times-Bold' : 'Helvetica-Bold';
+      const fontOblique = isExecutive ? 'Times-Italic' : 'Helvetica-Oblique';
+
+      // 1. Header Section
+      if (resume.name) {
+        doc.font(fontBold).fontSize(isExecutive ? 24 : 22).fillColor(primaryColor).text(resume.name.toUpperCase(), { align: 'center' });
+        doc.moveDown(0.2);
+      }
+
+      // Contact Details Subline
+      const contactInfo = [];
+      if (resume.email) contactInfo.push(resume.email);
+      if (resume.phone) contactInfo.push(resume.phone);
+      if (resume.linkedin) contactInfo.push(resume.linkedin);
+      if (resume.github) contactInfo.push(resume.github);
+      if (resume.portfolio) contactInfo.push(resume.portfolio);
+
+      if (contactInfo.length > 0) {
+        doc.font(fontName).fontSize(9).fillColor(isAts ? '#000000' : '#64748b').text(contactInfo.join('   |   '), { align: 'center' });
+        doc.moveDown(0.4);
+      }
+
+      // Border line under header
+      doc.strokeColor(isAts ? '#000000' : '#cbd5e1').lineWidth(isAts ? 1.5 : 1).moveTo(45, doc.y).lineTo(550, doc.y).stroke();
+      doc.moveDown(0.8);
+
+      // Section Header drawer helper
+      const drawSectionHeader = (title) => {
+        doc.moveDown(0.6);
+        doc.font(fontBold).fontSize(11).fillColor(primaryColor).text(title.toUpperCase());
+        doc.moveDown(0.2);
+        // Draw dividing line
+        doc.strokeColor(isAts ? '#000000' : '#e2e8f0').lineWidth(0.8).moveTo(45, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(0.4);
+      };
+
+      // Summary
+      if (resume.summary && resume.summary.trim() !== '') {
+        drawSectionHeader('Professional Summary');
+        doc.font(fontName).fontSize(9.5).fillColor(textColor).text(resume.summary, { align: 'justify', lineGap: 2.5 });
+      }
+
+      // Technical Skills
+      if (skillList && skillList.length > 0) {
+        drawSectionHeader('Technical Skills');
+        doc.font(fontName).fontSize(9.5).fillColor(textColor).text(skillList.join(', '), { align: 'left', lineGap: 2.5 });
+      }
+
+      // Experience
+      if (expList && expList.length > 0) {
+        drawSectionHeader('Professional Experience');
+        expList.forEach((exp) => {
+          if (!exp.role && !exp.company) return;
+          const startY = doc.y;
+
+          doc.font(fontBold).fontSize(10).fillColor(titleColor).text(`${exp.role || ''} — ${exp.company || ''}`, 45, startY, { width: 370 });
+
+          if (exp.duration) {
+            doc.font(fontOblique).fontSize(9).fillColor(isAts ? '#000000' : '#64748b').text(exp.duration, 420, startY, { align: 'right', width: 130 });
+          }
+
+          doc.x = 45; // Reset x positioning
+          doc.moveDown(0.25);
+
+          if (exp.description && exp.description.trim() !== '') {
+            doc.font(fontName).fontSize(9).fillColor(textColor).text(exp.description, { align: 'justify', lineGap: 2 });
+          }
+          doc.moveDown(0.4);
+        });
+      }
+
+      // Education
+      if (eduList && eduList.length > 0) {
+        drawSectionHeader('Education');
+        eduList.forEach((edu) => {
+          if (!edu.degree && !edu.school) return;
+          const startY = doc.y;
+
+          doc.font(fontBold).fontSize(10).fillColor(titleColor).text(edu.degree || '', 45, startY, { width: 370 });
+
+          if (edu.year) {
+            doc.font(fontOblique).fontSize(9).fillColor(isAts ? '#000000' : '#64748b').text(`Graduated: ${edu.year}`, 420, startY, { align: 'right', width: 130 });
+          }
+
+          doc.x = 45;
+          doc.moveDown(0.2);
+          if (edu.school) {
+            doc.font(fontName).fontSize(9).fillColor(textColor).text(edu.school);
+          }
+          doc.moveDown(0.4);
+        });
+      }
+
+      // Projects
+      if (projList && projList.length > 0) {
+        drawSectionHeader('Key Projects');
+        projList.forEach((proj) => {
+          if (!proj.title) return;
+          doc.font(fontBold).fontSize(10).fillColor(titleColor).text(proj.title);
+          doc.moveDown(0.2);
+
+          if (proj.description && proj.description.trim() !== '') {
+            doc.font(fontName).fontSize(9).fillColor(textColor).text(proj.description, { align: 'justify', lineGap: 2 });
+          }
+          doc.moveDown(0.4);
+        });
+      }
+
+      // Certifications
+      if (certList && certList.length > 0) {
+        drawSectionHeader('Certifications');
+        certList.forEach((cert) => {
+          if (!cert.title) return;
+          doc.font(fontName).fontSize(9.5).fillColor(textColor)
+            .text(`•  ${cert.title}${cert.issuer ? ' — ' + cert.issuer : ''}${cert.year ? ' (' + cert.year + ')' : ''}`);
+          doc.moveDown(0.25);
+        });
+      }
+
+      doc.end();
     } else {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename=${filename}.docx`);

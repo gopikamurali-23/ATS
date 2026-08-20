@@ -3,12 +3,18 @@ import { getUsernameFromJwt } from '../utils/jwt.js';
 
 export const authenticate = async (req, res, next) => {
   try {
+    let token = null;
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.query.token) {
+      token = req.query.token;
+    }
+
+    if (!token) {
       return res.status(401).json({ message: 'Error: Unauthorized! Token is missing.' });
     }
 
-    const token = authHeader.substring(7);
     const username = getUsernameFromJwt(token);
 
     if (!username) {

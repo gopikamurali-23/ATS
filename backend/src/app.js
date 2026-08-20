@@ -16,6 +16,8 @@ import applicationRoutes from './routes/applicationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import resumeBuilderRoutes from './routes/resumeBuilderRoutes.js';
 import interviewRoutes from './routes/interviewRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 // Setup environment variables
 dotenv.config();
@@ -65,6 +67,8 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/resumes', resumeBuilderRoutes);
 app.use('/api/interviews', interviewRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Root path diagnostic
 app.get('/', (req, res) => {
