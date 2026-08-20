@@ -228,21 +228,36 @@ const AdminDashboard = () => {
                         <th className="pb-3">Job Vacancy</th>
                         <th className="pb-3">Pipeline Status</th>
                         <th className="pb-3">Date Submitted</th>
+                        <th className="pb-3 text-right">Resume</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200/20">
                       {applications.map((a) => (
                         <tr key={a.id}>
                           <td className="py-3.5 font-bold text-slate-900 dark:text-white">
-                            {a.candidate.firstName} {a.candidate.lastName}
+                            {a.candidate?.firstName} {a.candidate?.lastName}
                           </td>
-                          <td className="py-3.5 text-slate-600 dark:text-slate-400">{a.job.title}</td>
+                          <td className="py-3.5 text-slate-600 dark:text-slate-400">{a.job?.title}</td>
                           <td className="py-3.5">
                             <span className="px-2 py-0.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                               {a.status}
                             </span>
                           </td>
                           <td className="py-3.5 text-xs text-slate-500">{new Date(a.appliedAt).toLocaleDateString()}</td>
+                          <td className="py-3.5 text-right">
+                            {a.candidate?.resume_url ? (
+                              <a
+                                href={a.candidate.resume_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition-colors cursor-pointer"
+                              >
+                                <FileText className="h-4 w-4 text-brand-500" /> View Resume
+                              </a>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">No resume</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

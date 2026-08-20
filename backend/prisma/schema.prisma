@@ -17,6 +17,7 @@ model applications {
   jobs         jobs         @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk65weib1lru9dkrbto5pv389vi")
   candidates   candidates   @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkg4e16cwk1qrad923bpx4hamdh")
   ats_results  ats_results?
+  interviews   interviews[]
 }
 
 model ats_results {
@@ -32,6 +33,19 @@ model ats_results {
   skill_match_score        Float
   strengths                String?
   weaknesses               String?
+  format_match_score       Float?       @default(0)
+  project_match_score      Float?       @default(0)
+  certification_match_score Float?       @default(0)
+  missing_keywords         String?
+  recommended_certifications String?
+  improvement_suggestions  String?
+  communication_match_score Float?       @default(0)
+  skill_by_skill_scores    String?      @db.Text
+  project_scores_breakdown String?      @db.Text
+  interview_success_probability Float?   @default(0)
+  hiring_success_probability Float?      @default(0)
+  weak_skills              String?      @db.Text
+  strong_skills            String?      @db.Text
   application_id           BigInt       @unique(map: "uk_l8pr6kdsj4lfqeudlw376qta2")
   applications             applications @relation(fields: [application_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk3q1q4scjeoy4qlsu33qd5m98u")
 }
@@ -73,6 +87,7 @@ model candidates {
   candidate_experience candidate_experience[]
   candidate_skills     candidate_skills[]
   users                users?                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fkme4fkelukmx2s63tlcrft6hio")
+  builder_resumes      builder_resumes[]
 }
 
 model companies {
@@ -129,4 +144,42 @@ model users {
   username   String      @unique(map: "uk_r43af9ap4edm43mmtq01oddj6") @db.VarChar(255)
   candidates candidates?
   companies  companies?
+}
+
+model builder_resumes {
+  id             BigInt     @id @default(autoincrement())
+  version        Int        @default(1)
+  name           String     @db.VarChar(255)
+  email          String     @db.VarChar(255)
+  phone          String?    @db.VarChar(255)
+  linkedin       String?    @db.VarChar(255)
+  github         String?    @db.VarChar(255)
+  portfolio      String?    @db.VarChar(255)
+  summary        String?    @db.Text
+  education      String?    @db.Text
+  experience     String?    @db.Text
+  skills         String?    @db.Text
+  projects       String?    @db.Text
+  certifications String?    @db.Text
+  template       String     @default("Modern") @db.VarChar(100)
+  created_at     DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?  @default(now()) @db.Timestamp(6)
+  candidate_id   BigInt
+  candidates     candidates @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model interviews {
+  id                BigInt       @id @default(autoincrement())
+  interview_date    DateTime     @db.Date
+  interview_time    String       @db.VarChar(100)
+  interview_mode    String       @db.VarChar(100)
+  meeting_link      String?      @db.Text
+  office_address    String?      @db.Text
+  interview_round   String       @db.VarChar(100)
+  status            String       @default("SCHEDULED") @db.VarChar(100)
+  reschedule_reason String?      @db.Text
+  created_at        DateTime?    @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?    @default(now()) @db.Timestamp(6)
+  application_id    BigInt
+  applications      applications @relation(fields: [application_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }

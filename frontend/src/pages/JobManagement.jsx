@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Loader, AlertCircle, Trash2, Edit3, Plus, CheckCircle } from 'lucide-react';
 
 const JobManagement = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -302,15 +304,34 @@ const JobManagement = () => {
                   <span>Location: <strong>{job.location || 'Remote'}</strong></span>
                   <span>Required Exp: <strong>{job.experienceRequiredYears} yrs</strong></span>
                 </div>
+                {/* Applicant Count */}
+                <div className="pt-2 flex items-center gap-1.5 text-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {job.applicantCount === 1 
+                      ? "1 applicant for this job" 
+                      : `${job.applicantCount || 0} applicants for this job`}
+                  </span>
+                </div>
               </div>
 
               <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200/30">
                 <button
                   onClick={() => handleOpenEdit(job)}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 transition-colors flex justify-center items-center gap-1 cursor-pointer"
+                  className="py-2 px-3 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-705 dark:bg-slate-800 dark:text-slate-300 transition-colors flex justify-center items-center gap-1 cursor-pointer"
                 >
-                  Edit Post
+                  <Edit3 className="h-3.5 w-3.5" /> Edit
                 </button>
+                
+                {job.applicantCount > 0 && (
+                  <button
+                    onClick={() => navigate('/company/candidates', { state: { jobId: job.id } })}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-950/40 dark:text-brand-400 border border-brand-100/30 transition-all cursor-pointer flex justify-center items-center gap-1"
+                  >
+                    View Candidates
+                  </button>
+                )}
+
                 <button
                   onClick={() => handleDelete(job.id)}
                   className="py-2 px-3 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 transition-colors cursor-pointer"

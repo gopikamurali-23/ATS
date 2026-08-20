@@ -134,7 +134,7 @@ const JobBrowse = () => {
 
               <div className="shrink-0">
                 <Link
-                  to={`/jobs/${job.id}`}
+                  to={`/applicant/jobs/${job.id}`}
                   className="flex items-center gap-1 py-2.5 px-5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm shadow-brand-500/10 transition-colors"
                 >
                   View Details

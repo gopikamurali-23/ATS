@@ -16,7 +16,8 @@ export const convertToJobDto = (job) => {
     educationRequired: job.education_required,
     skillsRequired: job.job_skills ? job.job_skills.map(s => s.skill) : [],
     keywords: job.job_keywords ? job.job_keywords.map(k => k.keyword) : [],
-    createdAt: job.created_at
+    createdAt: job.created_at,
+    applicantCount: job._count ? job._count.applications : 0
   };
 };
 
@@ -27,7 +28,10 @@ export const getActiveJobs = async (req, res, next) => {
       include: {
         companies: true,
         job_skills: true,
-        job_keywords: true
+        job_keywords: true,
+        _count: {
+          select: { applications: true }
+        }
       }
     });
     return res.status(200).json(jobs.map(convertToJobDto));
@@ -42,7 +46,10 @@ export const getAllJobs = async (req, res, next) => {
       include: {
         companies: true,
         job_skills: true,
-        job_keywords: true
+        job_keywords: true,
+        _count: {
+          select: { applications: true }
+        }
       }
     });
     return res.status(200).json(jobs.map(convertToJobDto));
@@ -59,7 +66,10 @@ export const getJobById = async (req, res, next) => {
       include: {
         companies: true,
         job_skills: true,
-        job_keywords: true
+        job_keywords: true,
+        _count: {
+          select: { applications: true }
+        }
       }
     });
 
@@ -81,7 +91,10 @@ export const getJobsByCompany = async (req, res, next) => {
       include: {
         companies: true,
         job_skills: true,
-        job_keywords: true
+        job_keywords: true,
+        _count: {
+          select: { applications: true }
+        }
       }
     });
     return res.status(200).json(jobs.map(convertToJobDto));
@@ -107,7 +120,10 @@ export const searchJobs = async (req, res, next) => {
       include: {
         companies: true,
         job_skills: true,
-        job_keywords: true
+        job_keywords: true,
+        _count: {
+          select: { applications: true }
+        }
       }
     });
     return res.status(200).json(jobs.map(convertToJobDto));

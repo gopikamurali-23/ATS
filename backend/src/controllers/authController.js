@@ -109,8 +109,13 @@ export const login = async (req, res, next) => {
       return res.status(400).send('Error: Username and password are required!');
     }
 
-    const user = await prisma.users.findUnique({
-      where: { username },
+    const user = await prisma.users.findFirst({
+      where: {
+        OR: [
+          { username: username },
+          { email: username }
+        ]
+      },
     });
 
     if (!user || !bcrypt.compareSync(password, user.password)) {

@@ -1,5 +1,6 @@
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
+import WordExtractor from 'word-extractor';
 
 const SKILL_DICTIONARY = [
   "Java", "Python", "C++", "C#", "JavaScript", "TypeScript", "HTML", "CSS", "SQL",
@@ -25,18 +26,27 @@ const extractTextFromDocx = async (buffer) => {
   return result.value || '';
 };
 
+const extractTextFromDoc = async (buffer) => {
+  const extractor = new WordExtractor();
+  const doc = await extractor.extract(buffer);
+  return doc.getBody() || '';
+};
+
 export const extractText = async (file) => {
   const filename = file.originalname;
   if (!filename) {
     throw new Error('Invalid file name');
   }
 
-  if (filename.toLowerCase().endsWith('.pdf')) {
+  const lowercaseName = filename.toLowerCase();
+  if (lowercaseName.endsWith('.pdf')) {
     return await extractTextFromPdf(file.buffer);
-  } else if (filename.toLowerCase().endsWith('.docx')) {
+  } else if (lowercaseName.endsWith('.docx')) {
     return await extractTextFromDocx(file.buffer);
+  } else if (lowercaseName.endsWith('.doc')) {
+    return await extractTextFromDoc(file.buffer);
   } else {
-    throw new Error('Unsupported file format. Only PDF and DOCX are supported.');
+    throw new Error('Unsupported file format. Only PDF, DOC, and DOCX are supported.');
   }
 };
 

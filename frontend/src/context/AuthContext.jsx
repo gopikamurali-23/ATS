@@ -9,14 +9,22 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
 
+  const mapRole = (backendRole) => {
+    if (backendRole === 'ROLE_CANDIDATE') return 'APPLICANT';
+    if (backendRole === 'ROLE_COMPANY') return 'COMPANY';
+    return backendRole;
+  };
+
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     const savedTheme = localStorage.getItem('theme');
 
     if (savedToken && savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      parsedUser.role = mapRole(parsedUser.role);
       setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      setUser(parsedUser);
     }
 
     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -46,26 +54,30 @@ export const AuthProvider = ({ children }) => {
     const response = await api.post('/api/auth/login', { username, password });
     const { token: jwt, id, email, role, profileId } = response.data;
     
-    const userPayload = { username, id, email, role, profileId };
+    const userPayload = { username, id, email, role: mapRole(role), profileId };
     localStorage.setItem('token', jwt);
     localStorage.setItem('user', JSON.stringify(userPayload));
     
     setToken(jwt);
     setUser(userPayload);
-    return response.data;
+    return { ...response.data, role: mapRole(role) };
   };
 
   const register = async (registerData) => {
-    const response = await api.post('/api/auth/register', registerData);
+    const payload = { ...registerData };
+    if (payload.role === 'APPLICANT') payload.role = 'ROLE_CANDIDATE';
+    else if (payload.role === 'COMPANY') payload.role = 'ROLE_COMPANY';
+
+    const response = await api.post('/api/auth/register', payload);
     const { token: jwt, id, username, email, role, profileId } = response.data;
 
-    const userPayload = { username, id, email, role, profileId };
+    const userPayload = { username, id, email, role: mapRole(role), profileId };
     localStorage.setItem('token', jwt);
     localStorage.setItem('user', JSON.stringify(userPayload));
 
     setToken(jwt);
     setUser(userPayload);
-    return response.data;
+    return { ...response.data, role: mapRole(role) };
   };
 
   const logout = () => {

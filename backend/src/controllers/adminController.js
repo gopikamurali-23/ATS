@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import path from 'path';
 
 export const getSystemAnalytics = async (req, res, next) => {
   try {
@@ -62,7 +63,13 @@ export const getAllUsers = async (req, res, next) => {
         companies: true
       }
     });
-    return res.status(200).json(users);
+    const processed = users.map(u => {
+      if (u.candidates && u.candidates.resume_url) {
+        u.candidates.resume_url = `/uploads/${path.basename(u.candidates.resume_url)}`;
+      }
+      return u;
+    });
+    return res.status(200).json(processed);
   } catch (error) {
     next(error);
   }
@@ -110,7 +117,16 @@ export const getAllJobs = async (req, res, next) => {
         job_keywords: true
       }
     });
-    return res.status(200).json(jobs);
+    const mapped = jobs.map(j => ({
+      id: j.id,
+      title: j.title,
+      location: j.location,
+      status: j.status,
+      company: {
+        name: j.companies ? j.companies.name : ''
+      }
+    }));
+    return res.status(200).json(mapped);
   } catch (error) {
     next(error);
   }
@@ -124,7 +140,20 @@ export const getAllApplications = async (req, res, next) => {
         jobs: { include: { companies: true } }
       }
     });
-    return res.status(200).json(applications);
+    const mapped = applications.map(a => ({
+      id: a.id,
+      status: a.status,
+      appliedAt: a.applied_at,
+      candidate: {
+        firstName: a.candidates ? a.candidates.first_name : '',
+        lastName: a.candidates ? a.candidates.last_name : '',
+        resume_url: a.candidates && a.candidates.resume_url ? `/uploads/${path.basename(a.candidates.resume_url)}` : ''
+      },
+      job: {
+        title: a.jobs ? a.jobs.title : ''
+      }
+    }));
+    return res.status(200).json(mapped);
   } catch (error) {
     next(error);
   }
