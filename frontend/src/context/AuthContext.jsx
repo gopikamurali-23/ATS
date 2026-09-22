@@ -1,98 +1,72 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import api from '../utils/api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../api';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('talentpulse_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-  const mapRole = (backendRole) => {
-    if (backendRole === 'ROLE_CANDIDATE') return 'APPLICANT';
-    if (backendRole === 'ROLE_COMPANY') return 'COMPANY';
-    return backendRole;
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    const savedTheme = localStorage.getItem('theme');
-
-    if (savedToken && savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      parsedUser.role = mapRole(parsedUser.role);
-      setToken(savedToken);
-      setUser(parsedUser);
-    }
-
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      setDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else {
-      setDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-
-    setLoading(false);
-  }, []);
-
-  const toggleDarkMode = () => {
-    if (darkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      setDarkMode(false);
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      setDarkMode(true);
+  const login = async (identifier, password, expectedRole) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.login(identifier, password, expectedRole);
+      localStorage.setItem('talentpulse_token', res.token);
+      localStorage.setItem('talentpulse_user', JSON.stringify(res));
+      setUser(res);
+      return res;
+    } catch (err) {
+      setError(err.message || 'Invalid credentials');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const login = async (username, password) => {
-    const response = await api.post('/api/auth/login', { username, password });
-    const { token: jwt, id, email, role, profileId } = response.data;
-    
-    const userPayload = { username, id, email, role: mapRole(role), profileId };
-    localStorage.setItem('token', jwt);
-    localStorage.setItem('user', JSON.stringify(userPayload));
-    
-    setToken(jwt);
-    setUser(userPayload);
-    return { ...response.data, role: mapRole(role) };
+  const register = async (userData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.register(userData);
+      localStorage.setItem('talentpulse_token', res.token);
+      localStorage.setItem('talentpulse_user', JSON.stringify(res));
+      setUser(res);
+      return res;
+    } catch (err) {
+      setError(err.message || 'Registration failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const register = async (registerData) => {
-    const payload = { ...registerData };
-    if (payload.role === 'APPLICANT') payload.role = 'ROLE_CANDIDATE';
-    else if (payload.role === 'COMPANY') payload.role = 'ROLE_COMPANY';
-
-    const response = await api.post('/api/auth/register', payload);
-    const { token: jwt, id, username, email, role, profileId } = response.data;
-
-    const userPayload = { username, id, email, role: mapRole(role), profileId };
-    localStorage.setItem('token', jwt);
-    localStorage.setItem('user', JSON.stringify(userPayload));
-
-    setToken(jwt);
-    setUser(userPayload);
-    return { ...response.data, role: mapRole(role) };
+  const loginAsDemo = async (roleType) => {
+    if (roleType === 'candidate') {
+      return login('john.doe@example.com', 'john123', 'ROLE_CANDIDATE');
+    } else if (roleType === 'company' || roleType === 'recruiter') {
+      return login('careers@google.com', 'google123', 'ROLE_COMPANY');
+    } else if (roleType === 'admin') {
+      return login('admin@talentpulse.io', 'admin123', 'ROLE_ADMIN');
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
+    localStorage.removeItem('talentpulse_token');
+    localStorage.removeItem('talentpulse_user');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, darkMode, toggleDarkMode }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, login, register, loginAsDemo, logout, loading, error, setError }}>
+      {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
-export default AuthContext;
