@@ -1,22 +1,28 @@
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { useRouter } from '../../context/RouterContext';
 import { 
-  Sun, Moon, Sparkles, ShieldCheck, UserCheck, Building2, PhoneCall 
+  Sun, Moon, Sparkles, ShieldCheck, PhoneCall 
 } from 'lucide-react';
 
-export const TopBar = ({ onSelectRole, onNavigate }) => {
+export const TopBar = () => {
   const { theme, toggleTheme } = useTheme();
+  const { navigate } = useRouter();
 
   return (
     <div className="bg-[#0b1727] text-white text-[11px] font-medium border-b border-slate-800/80 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between gap-3">
         
         {/* Left: Enterprise Announcement Strip */}
-        <div className="flex items-center gap-2 overflow-hidden truncate">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-extrabold uppercase tracking-wider flex-shrink-0">
+        <div 
+          onClick={() => navigate('/analyzer')}
+          className="flex items-center gap-2 overflow-hidden truncate cursor-pointer group"
+          title="Try TalentPulse AI ATS Analyzer"
+        >
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-extrabold uppercase tracking-wider flex-shrink-0 group-hover:bg-blue-500/30 transition-colors">
             <Sparkles className="w-3 h-3 text-blue-400" /> Platform Release
           </span>
-          <div className="truncate text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-semibold">
+          <div className="truncate text-slate-300 group-hover:text-white transition-colors text-xs font-semibold">
             <span className="hidden sm:inline">TalentPulse 3.0: Next-Gen AI Candidate Matching &amp; Resume Intelligence Live</span>
             <span className="sm:hidden">TalentPulse 3.0 AI Live</span>
             <span className="mx-2 text-slate-600 hidden md:inline">|</span>
@@ -28,12 +34,12 @@ export const TopBar = ({ onSelectRole, onNavigate }) => {
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           
           <div className="hidden md:flex items-center gap-3 text-slate-300 border-r border-slate-800 pr-4">
-            <a 
-              href="#contact" 
+            <button 
+              onClick={() => navigate('/contact')} 
               className="hover:text-blue-400 flex items-center gap-1 transition-colors"
             >
               <PhoneCall className="w-3.5 h-3.5 text-blue-400" /> Enterprise Sales
-            </a>
+            </button>
             <span className="flex items-center gap-1 text-emerald-400 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" /> SOC2 &amp; ISO 27001 Certified
             </span>
@@ -52,7 +58,6 @@ export const TopBar = ({ onSelectRole, onNavigate }) => {
               <Moon className="w-3.5 h-3.5 text-blue-300" />
             )}
           </button>
-
 
         </div>
 

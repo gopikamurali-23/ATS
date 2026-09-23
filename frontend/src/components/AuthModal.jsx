@@ -638,7 +638,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                     setSelectedRole('ROLE_CANDIDATE');
                     setLoginIdentifier('john.doe@example.com');
                     setLoginPassword('john123');
-                    setUserCaptchaInput(captchaCode);
+                    setUserCaptchaInput('');
                   }}
                   className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] flex-shrink-0 transition-colors"
                 >
@@ -654,7 +654,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                     setSelectedRole('ROLE_COMPANY');
                     setLoginIdentifier('careers@google.com');
                     setLoginPassword('google123');
-                    setUserCaptchaInput(captchaCode);
+                    setUserCaptchaInput('');
                   }}
                   className="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] flex-shrink-0 transition-colors"
                 >

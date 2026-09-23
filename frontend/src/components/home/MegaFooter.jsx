@@ -1,9 +1,12 @@
 import React from 'react';
+import { useRouter } from '../../context/RouterContext';
 import { 
   Sparkles, ShieldCheck, Mail, PhoneCall, MapPin, ArrowUp, ArrowLeft 
 } from 'lucide-react';
 
-export const MegaFooter = ({ onNavigate, onOpenAuthModal, onSelectRole }) => {
+export const MegaFooter = ({ onOpenAuthModal }) => {
+  const { navigate } = useRouter();
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -17,7 +20,10 @@ export const MegaFooter = ({ onNavigate, onOpenAuthModal, onSelectRole }) => {
           
           {/* Column 1: Institutional Brand Info (2 cols) */}
           <div className="col-span-2 space-y-4 pr-4">
-            <div className="flex items-center gap-3">
+            <div 
+              className="flex items-center gap-3 cursor-pointer select-none"
+              onClick={() => navigate('/')}
+            >
               <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-amber-400 font-black shadow-md border border-amber-400/30">
                 <Sparkles className="w-5 h-5 fill-current" />
               </div>
@@ -43,10 +49,10 @@ export const MegaFooter = ({ onNavigate, onOpenAuthModal, onSelectRole }) => {
               Candidate Hub
             </div>
             <ul className="space-y-2 text-slate-300 font-medium">
-              <li><button onClick={() => onSelectRole('candidate')} className="hover:text-amber-300 transition-colors">Candidate Login</button></li>
-              <li><button onClick={() => onSelectRole('candidate')} className="hover:text-amber-300 transition-colors">Resume Builder</button></li>
-              <li><button onClick={() => onSelectRole('candidate')} className="hover:text-amber-300 transition-colors">ATS Score Analyzer</button></li>
-              <li><button onClick={() => onNavigate('jobs')} className="hover:text-amber-300 transition-colors">Browse Job Board</button></li>
+              <li><button onClick={() => onOpenAuthModal('login')} className="hover:text-amber-300 transition-colors">Candidate Login</button></li>
+              <li><button onClick={() => navigate('/builder')} className="hover:text-amber-300 transition-colors">Resume Builder</button></li>
+              <li><button onClick={() => navigate('/analyzer')} className="hover:text-amber-300 transition-colors">ATS Score Analyzer</button></li>
+              <li><button onClick={() => navigate('/jobs')} className="hover:text-amber-300 transition-colors">Browse Job Board</button></li>
             </ul>
           </div>
 
@@ -57,9 +63,9 @@ export const MegaFooter = ({ onNavigate, onOpenAuthModal, onSelectRole }) => {
             </div>
             <ul className="space-y-2 text-slate-300 font-medium">
               <li><button onClick={() => onOpenAuthModal('signup')} className="hover:text-amber-300 transition-colors">Employer Sign Up</button></li>
-              <li><button onClick={() => onSelectRole('recruiter')} className="hover:text-amber-300 transition-colors">Post Requisitions</button></li>
-              <li><button onClick={() => onSelectRole('recruiter')} className="hover:text-amber-300 transition-colors">Shortlist Candidate Pipeline</button></li>
-              <li><button onClick={() => onSelectRole('recruiter')} className="hover:text-amber-300 transition-colors">Interview Scheduler</button></li>
+              <li><button onClick={() => navigate('/portal')} className="hover:text-amber-300 transition-colors">Post Requisitions</button></li>
+              <li><button onClick={() => navigate('/features')} className="hover:text-amber-300 transition-colors">Shortlist Candidate Pipeline</button></li>
+              <li><button onClick={() => navigate('/features')} className="hover:text-amber-300 transition-colors">Interview Scheduler</button></li>
             </ul>
           </div>
 
@@ -69,15 +75,24 @@ export const MegaFooter = ({ onNavigate, onOpenAuthModal, onSelectRole }) => {
               Institutional HQ
             </div>
             <div className="space-y-2 text-slate-300 leading-relaxed text-[11px]">
-              <div className="flex items-start gap-1.5">
+              <div 
+                className="flex items-start gap-1.5 cursor-pointer hover:text-amber-300 transition-colors"
+                onClick={() => navigate('/contact')}
+              >
                 <MapPin className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                 <span>Enterprise Recruitment Tower, Suite 400, Tech Park</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div 
+                className="flex items-center gap-1.5 cursor-pointer hover:text-amber-300 transition-colors"
+                onClick={() => navigate('/contact')}
+              >
                 <Mail className="w-4 h-4 text-blue-400 flex-shrink-0" />
                 <span>support@talentpulse.io</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div 
+                className="flex items-center gap-1.5 cursor-pointer hover:text-amber-300 transition-colors"
+                onClick={() => navigate('/contact')}
+              >
                 <PhoneCall className="w-4 h-4 text-blue-400 flex-shrink-0" />
                 <span>+1 (800) 555-PULSE</span>
               </div>
@@ -91,19 +106,19 @@ export const MegaFooter = ({ onNavigate, onOpenAuthModal, onSelectRole }) => {
           
           <div className="flex items-center gap-3">
             <button
-              onClick={() => onNavigate('home')}
+              onClick={() => navigate('/')}
               className="pill-btn px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center gap-1 transition-all"
-              title="Return to Main Portal Home"
+              title="Return to Home"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to Top Header
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
             </button>
             <span>© 2026 TalentPulse Inc. All rights reserved.</span>
           </div>
 
           <div className="flex items-center gap-6">
-            <a href="#about" className="hover:text-slate-200 transition-colors">Privacy Policy</a>
-            <a href="#about" className="hover:text-slate-200 transition-colors">Terms of Service</a>
-            <a href="#contact" className="hover:text-slate-200 transition-colors">Security Compliance</a>
+            <button onClick={() => navigate('/contact')} className="hover:text-slate-200 transition-colors">Privacy Policy</button>
+            <button onClick={() => navigate('/contact')} className="hover:text-slate-200 transition-colors">Terms of Service</button>
+            <button onClick={() => navigate('/contact')} className="hover:text-slate-200 transition-colors">Security Compliance</button>
             
             <button
               onClick={scrollToTop}

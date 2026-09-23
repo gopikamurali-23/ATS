@@ -1,28 +1,32 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useRouter } from '../../context/RouterContext';
 import { 
   Sparkles, Menu, X, UserCheck, Building2, LogOut, ArrowRight, Layers, BarChart3, Users, CheckCircle2,
-  Sun, Moon, Shield
+  Sun, Moon, Shield, FileSearch, FileText, Briefcase
 } from 'lucide-react';
 
-export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRole }) => {
-  const { user, loginAsDemo, logout } = useAuth();
+export const MainNavbar = ({ onOpenAuthModal }) => {
+  const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { currentPage, navigate } = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleNavClick = (nav, href) => {
+  const handleNavClick = (path) => {
     setMobileMenuOpen(false);
-    if (nav) {
-      onNavigate(nav);
-    }
-    if (href) {
-      const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    navigate(path);
   };
+
+  const navLinks = [
+    { label: 'Home', path: '/', key: 'home' },
+    { label: 'Jobs', path: '/jobs', key: 'jobs' },
+    { label: 'ATS Analyzer', path: '/analyzer', key: 'analyzer' },
+    { label: 'Resume Builder', path: '/builder', key: 'builder' },
+    { label: 'Features', path: '/features', key: 'features' },
+    { label: 'Analytics', path: '/analytics', key: 'analytics' },
+    { label: 'Enterprise HQ', path: '/contact', key: 'contact' },
+  ];
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-zinc-800/80 transition-colors shadow-sm">
@@ -31,7 +35,7 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
         {/* Brand Emblem */}
         <div 
           className="flex items-center gap-3 cursor-pointer select-none group" 
-          onClick={() => handleNavClick('home')}
+          onClick={() => handleNavClick('/')}
         >
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-all">
             <Sparkles className="w-5 h-5 fill-current" />
@@ -47,46 +51,20 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
         </div>
 
         {/* Desktop Enterprise Navigation Menu */}
-        <nav className="hidden lg:flex items-center gap-8 text-xs font-bold text-slate-600 dark:text-zinc-300">
-          
-          <button
-            onClick={() => handleNavClick('home')}
-            className={`hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${currentNav === 'home' ? 'text-blue-600 dark:text-blue-400 font-extrabold' : ''}`}
-          >
-            Home
-          </button>
-
-          <a
-            href="#features"
-            onClick={(e) => { e.preventDefault(); handleNavClick('home', '#features'); }}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          >
-            Features
-          </a>
-
-          <button
-            onClick={() => handleNavClick('jobs')}
-            className={`hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${currentNav === 'jobs' ? 'text-blue-600 dark:text-blue-400 font-extrabold' : ''}`}
-          >
-            Talent Pool &amp; Jobs
-          </button>
-
-          <a
-            href="#analytics"
-            onClick={(e) => { e.preventDefault(); handleNavClick('home', '#analytics'); }}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          >
-            Analytics
-          </a>
-
-          <a
-            href="#contact"
-            onClick={(e) => { e.preventDefault(); handleNavClick('home', '#contact'); }}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          >
-            Enterprise HQ
-          </a>
-
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-7 text-xs font-bold text-slate-600 dark:text-zinc-300">
+          {navLinks.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => handleNavClick(item.path)}
+              className={`transition-colors py-1 ${
+                currentPage === item.key 
+                  ? 'text-blue-600 dark:text-blue-400 font-extrabold border-b-2 border-blue-600 dark:border-blue-400' 
+                  : 'hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </nav>
 
         {/* Right Controls: Only Log In & Sign Up */}
@@ -95,7 +73,7 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
           {user ? (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onNavigate('portal')}
+                onClick={() => handleNavClick('/portal')}
                 className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-800 dark:text-zinc-200 transition-colors"
               >
                 <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-extrabold uppercase">
@@ -104,7 +82,7 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
                 <span className="max-w-[100px] truncate">{user.fullName || user.username}</span>
               </button>
               <button
-                onClick={() => { logout(); onNavigate('home'); }}
+                onClick={() => { logout(); handleNavClick('/'); }}
                 title="Sign Out"
                 className="p-2 rounded-full text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition-colors"
               >
@@ -160,51 +138,31 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
           </div>
 
           <nav className="space-y-1 text-xs font-bold text-slate-700 dark:text-zinc-300">
-            <button
-              onClick={() => handleNavClick('home')}
-              className="w-full text-left py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Home
-            </button>
-            <a
-              href="#features"
-              onClick={(e) => { e.preventDefault(); handleNavClick('home', '#features'); }}
-              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Features &amp; Ecosystem
-            </a>
-            <button
-              onClick={() => handleNavClick('jobs')}
-              className="w-full text-left py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Talent Pool &amp; Verified Jobs
-            </button>
-            <a
-              href="#analytics"
-              onClick={(e) => { e.preventDefault(); handleNavClick('home', '#analytics'); }}
-              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Analytics Dashboard
-            </a>
-            <a
-              href="#contact"
-              onClick={(e) => { e.preventDefault(); handleNavClick('home', '#contact'); }}
-              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Enterprise HQ &amp; Support
-            </a>
+            {navLinks.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => handleNavClick(item.path)}
+                className={`w-full text-left py-2.5 px-3 rounded-xl transition-colors ${
+                  currentPage === item.key
+                    ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-extrabold'
+                    : 'hover:bg-slate-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
             
             <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex flex-col gap-2">
               {user ? (
                 <>
                   <button
-                    onClick={() => { onNavigate('portal'); setMobileMenuOpen(false); }}
+                    onClick={() => handleNavClick('/portal')}
                     className="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
                   >
                     <UserCheck className="w-4 h-4" /> Go to My Dashboard
                   </button>
                   <button
-                    onClick={() => { logout(); onNavigate('home'); setMobileMenuOpen(false); }}
+                    onClick={() => { logout(); handleNavClick('/'); }}
                     className="w-full py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold text-xs rounded-xl border border-rose-200 dark:border-rose-900/60"
                   >
                     Sign Out ({user.fullName || user.username})
