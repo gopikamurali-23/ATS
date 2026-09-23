@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { 
-  Sparkles, Menu, X, UserCheck, Building2, LogOut, ArrowRight, Layers, BarChart3, Users, CheckCircle2
+  Sparkles, Menu, X, UserCheck, Building2, LogOut, ArrowRight, Layers, BarChart3, Users, CheckCircle2,
+  Sun, Moon, Shield
 } from 'lucide-react';
 
 export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRole }) => {
   const { user, loginAsDemo, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavClick = (nav, href) => {
@@ -89,13 +92,13 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
         {/* Right Controls */}
         <div className="flex items-center gap-3">
           
-          {/* Quick Demo Switcher Pills */}
+          {/* Quick Demo Switcher Pills (Desktop) */}
           <div className="hidden xl:flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-full text-xs border border-slate-200 dark:border-zinc-800">
             <span className="px-2 text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider text-[9px]">Demo:</span>
             <button
               onClick={() => { loginAsDemo('candidate'); onNavigate('portal'); }}
               className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
-                user?.role === 'ROLE_CANDIDATE' ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                user?.role === 'ROLE_CANDIDATE' ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
               }`}
             >
               Candidate
@@ -103,7 +106,7 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
             <button
               onClick={() => { loginAsDemo('recruiter'); onNavigate('portal'); }}
               className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
-                user?.role === 'ROLE_COMPANY' ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                user?.role === 'ROLE_COMPANY' ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
               }`}
             >
               Recruiter
@@ -133,7 +136,7 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onOpenAuthModal('login')}
-                className="px-4 py-2 text-xs font-bold text-slate-700 dark:text-zinc-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-zinc-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 Portal Login
               </button>
@@ -151,7 +154,7 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300"
+            className="lg:hidden p-2 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
             aria-label="Toggle Menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -163,48 +166,111 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 px-4 py-6 space-y-4 shadow-2xl">
-          <nav className="space-y-2 text-xs font-bold text-slate-700 dark:text-zinc-300">
+        <div className="lg:hidden bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 px-4 py-5 space-y-4 shadow-2xl transition-colors">
+          
+          {/* Mobile Quick Role / Demo Switcher */}
+          <div className="p-3 bg-slate-50 dark:bg-zinc-800/70 rounded-2xl border border-slate-200 dark:border-zinc-700 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+              <span>Quick Demo Switcher</span>
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-1 text-slate-700 dark:text-zinc-300 font-semibold lowercase px-2 py-0.5 rounded-full bg-slate-200 dark:bg-zinc-700"
+              >
+                {theme === 'dark' ? <Sun className="w-3 h-3 text-amber-400" /> : <Moon className="w-3 h-3 text-blue-400" />}
+                <span>{theme} mode</span>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => { loginAsDemo('candidate'); onNavigate('portal'); setMobileMenuOpen(false); }}
+                className={`py-2 px-3 rounded-xl text-xs font-bold text-center border transition-all ${
+                  user?.role === 'ROLE_CANDIDATE'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                }`}
+              >
+                Demo Candidate
+              </button>
+              <button
+                onClick={() => { loginAsDemo('recruiter'); onNavigate('portal'); setMobileMenuOpen(false); }}
+                className={`py-2 px-3 rounded-xl text-xs font-bold text-center border transition-all ${
+                  user?.role === 'ROLE_COMPANY'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                    : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                }`}
+              >
+                Demo Recruiter
+              </button>
+            </div>
+          </div>
+
+          <nav className="space-y-1 text-xs font-bold text-slate-700 dark:text-zinc-300">
             <button
               onClick={() => handleNavClick('home')}
-              className="w-full text-left py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800"
+              className="w-full text-left py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
             >
               Home
             </button>
             <a
               href="#features"
               onClick={(e) => { e.preventDefault(); handleNavClick('home', '#features'); }}
-              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800"
+              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
             >
-              Features &amp; Modules
+              Features &amp; Ecosystem
             </a>
             <button
               onClick={() => handleNavClick('jobs')}
-              className="w-full text-left py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800"
+              className="w-full text-left py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
             >
               Talent Pool &amp; Verified Jobs
             </button>
             <a
               href="#analytics"
               onClick={(e) => { e.preventDefault(); handleNavClick('home', '#analytics'); }}
-              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800"
+              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
             >
               Analytics Dashboard
             </a>
+            <a
+              href="#contact"
+              onClick={(e) => { e.preventDefault(); handleNavClick('home', '#contact'); }}
+              className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Enterprise HQ &amp; Support
+            </a>
             
             <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex flex-col gap-2">
-              <button
-                onClick={() => onOpenAuthModal('login')}
-                className="w-full py-2.5 bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold text-xs rounded-xl"
-              >
-                Portal Login
-              </button>
-              <button
-                onClick={() => onSelectRole('candidate')}
-                className="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md"
-              >
-                Get Started
-              </button>
+              {user ? (
+                <>
+                  <button
+                    onClick={() => { onNavigate('portal'); setMobileMenuOpen(false); }}
+                    className="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+                  >
+                    <UserCheck className="w-4 h-4" /> Go to My Dashboard
+                  </button>
+                  <button
+                    onClick={() => { logout(); onNavigate('home'); setMobileMenuOpen(false); }}
+                    className="w-full py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold text-xs rounded-xl border border-rose-200 dark:border-rose-900/60"
+                  >
+                    Sign Out ({user.fullName || user.username})
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { onOpenAuthModal('login'); setMobileMenuOpen(false); }}
+                    className="w-full py-2.5 bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold text-xs rounded-xl"
+                  >
+                    Portal Login
+                  </button>
+                  <button
+                    onClick={() => { onSelectRole('candidate'); setMobileMenuOpen(false); }}
+                    className="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md"
+                  >
+                    Get Started (Candidate / Recruiter)
+                  </button>
+                </>
+              )}
             </div>
           </nav>
         </div>
@@ -213,4 +279,3 @@ export const MainNavbar = ({ currentNav, onNavigate, onOpenAuthModal, onSelectRo
     </header>
   );
 };
-

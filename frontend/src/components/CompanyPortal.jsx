@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../api';
+import { useToast } from '../context/ToastContext';
+import { useJobs } from '../hooks/useJobs';
+import { useApplications } from '../hooks/useApplications';
+import { TableRowSkeleton } from './common/Skeleton';
 import { InterviewSchedulerModal } from './InterviewSchedulerModal';
 import { 
   Building2, LayoutDashboard, Briefcase, Plus, Users, UserCheck, Award, 
@@ -10,14 +13,19 @@ import {
 
 export const CompanyPortal = ({ onBackToHome }) => {
   const { user, logout } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
+
+  // Domain Hooks (Architectural Rule 1 & 3: Decoupled Fetching & Resilient Updates)
+  const { jobs: allJobs, loading: jobsLoading, postJob } = useJobs();
+  const { applications, loading: appsLoading, updateStatus: updateAppStatus } = useApplications(true);
 
   // Active navigation tab inside Recruiter Portal
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Data States
-  const [companyJobs, setCompanyJobs] = useState([]);
-  const [applications, setApplications] = useState([]);
+  // Filter & Pagination States (Architectural Rule 5: Virtualized/Paginated Lists)
   const [selectedJobIdFilter, setSelectedJobIdFilter] = useState('ALL');
+  const [appPage, setAppPage] = useState(1);
+  const appsPerPage = 5;
   
   // Modals & Viewers
   const [selectedCandidateForResume, setSelectedCandidateForResume] = useState(null);
@@ -47,23 +55,8 @@ export const CompanyPortal = ({ onBackToHome }) => {
     }
   ]);
 
-  useEffect(() => {
-    loadCompanyData();
-  }, []);
-
-  const loadCompanyData = async () => {
-    try {
-      const allJobs = await api.getJobs();
-      const companyName = user?.companyName || 'Google';
-      const filteredJobs = allJobs.filter(j => !j.companyName || j.companyName.toLowerCase() === companyName.toLowerCase() || user?.role === 'ROLE_ADMIN');
-      setCompanyJobs(filteredJobs.length > 0 ? filteredJobs : allJobs);
-
-      const compApps = await api.getCompanyApplications();
-      setApplications(compApps || []);
-    } catch (e) {
-      console.warn("Failed to load recruiter data", e);
-    }
-  };
+  const companyName = user?.companyName || 'Google';
+  const companyJobs = allJobs.filter(j => !j.companyName || j.companyName.toLowerCase() === companyName.toLowerCase() || user?.role === 'ROLE_ADMIN');
 
   const handlePostJobSubmit = async (e) => {
     e.preventDefault();
@@ -82,26 +75,26 @@ export const CompanyPortal = ({ onBackToHome }) => {
         active: true
       };
 
-      await api.createJob(newJobData);
+      await postJob(newJobData);
+      toastSuccess(`Job requisition "${postTitle}" posted successfully!`);
       setPostSuccess(`Job requisition "${postTitle}" posted successfully!`);
       
       setPostTitle(''); setPostDesc(''); setPostSkills('');
       setTimeout(() => {
         setPostSuccess('');
-        loadCompanyData();
         setActiveTab('manage-jobs');
       }, 1200);
     } catch (err) {
-      alert("Failed to post job: " + err.message);
+      toastError("Failed to post job: " + err.message);
     }
   };
 
   const handleUpdateStatus = async (appId, newStatus) => {
     try {
-      await api.updateApplicationStatus(appId, newStatus);
-      setApplications(applications.map(a => a.id === appId ? { ...a, status: newStatus } : a));
+      await updateAppStatus(appId, newStatus);
+      toastSuccess(`Application status updated to ${newStatus}`);
     } catch (e) {
-      alert("Failed to update status");
+      toastError("Failed to update status: " + e.message);
     }
   };
 
@@ -116,6 +109,7 @@ export const CompanyPortal = ({ onBackToHome }) => {
       status: 'SCHEDULED'
     };
     setScheduledInterviews([newInterview, ...scheduledInterviews]);
+    toastSuccess(`Interview invitation dispatched to ${details.candidateName}`);
   };
 
   // Metrics Calculations
@@ -127,6 +121,9 @@ export const CompanyPortal = ({ onBackToHome }) => {
   const filteredApplications = selectedJobIdFilter === 'ALL'
     ? applications
     : applications.filter(a => a.jobId === Number(selectedJobIdFilter) || a.job?.id === Number(selectedJobIdFilter));
+
+  const totalAppPages = Math.ceil(filteredApplications.length / appsPerPage) || 1;
+  const paginatedApplications = filteredApplications.slice((appPage - 1) * appsPerPage, appPage * appsPerPage);
 
   return (
     <div className="space-y-4">
@@ -145,10 +142,40 @@ export const CompanyPortal = ({ onBackToHome }) => {
         </div>
       </div>
 
+      {/* Mobile Horizontal Tab Navigation (Visible on mobile/tablet screens < md) */}
+      <div className="md:hidden bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-2 shadow-sm overflow-x-auto flex items-center gap-2 text-xs font-bold">
+        {[
+          { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'applications', label: `Applications (${applications.length})`, icon: Users },
+          { id: 'manage-jobs', label: `Jobs (${companyJobs.length})`, icon: Briefcase },
+          { id: 'post-job', label: 'Post Job', icon: Plus },
+          { id: 'shortlisted', label: `Shortlisted (${shortlistedCount})`, icon: Award },
+          { id: 'interviews', label: `Interviews (${scheduledInterviews.length})`, icon: Calendar },
+          { id: 'reports', label: 'Analytics', icon: BarChart3 },
+          { id: 'company-profile', label: 'Profile', icon: Building2 },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3.5 py-2 rounded-xl whitespace-nowrap flex items-center gap-1.5 transition-all flex-shrink-0 ${
+                activeTab === tab.id
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="min-h-[700px] flex flex-col md:flex-row gap-6">
         
-        {/* RECRUITER SIDEBAR NAVIGATION */}
-        <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-4 shadow-sm space-y-6 flex-shrink-0">
+        {/* RECRUITER SIDEBAR NAVIGATION (Desktop) */}
+        <aside className="hidden md:block w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-4 shadow-sm space-y-6 flex-shrink-0">
           
           {/* Recruiter Identity Card */}
           <div className="p-4 bg-slate-900 dark:bg-zinc-800 text-white rounded-2xl space-y-1 shadow-md">
@@ -473,35 +500,41 @@ export const CompanyPortal = ({ onBackToHome }) => {
             <form onSubmit={handlePostJobSubmit} className="space-y-4 text-xs">
               
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Job Title</label>
+                <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Job Title <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   required
                   value={postTitle}
                   onChange={(e) => setPostTitle(e.target.value)}
                   placeholder="e.g. Senior Java Microservices Engineer"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Location</label>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Location <span className="text-rose-500 font-bold ml-1">*</span>
+                  </label>
                   <input
                     type="text"
                     value={postLocation}
                     onChange={(e) => setPostLocation(e.target.value)}
                     placeholder="Mountain View, CA (Hybrid)"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Employment Type</label>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Employment Type <span className="text-rose-500 font-bold ml-1">*</span>
+                  </label>
                   <select
                     value={postType}
                     onChange={(e) => setPostType(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg bg-white"
                   >
                     <option value="Full-Time">Full-Time</option>
                     <option value="Contract">Contract</option>
@@ -511,47 +544,55 @@ export const CompanyPortal = ({ onBackToHome }) => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Required Experience (Years)</label>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Required Experience (Years) <span className="text-rose-500 font-bold ml-1">*</span>
+                  </label>
                   <input
                     type="number"
                     value={postExpYears}
                     onChange={(e) => setPostExpYears(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Required Skills (Comma Separated)</label>
+                <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Required Skills (Comma Separated) <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   value={postSkills}
                   onChange={(e) => setPostSkills(e.target.value)}
                   placeholder="Java, Spring Boot, PostgreSQL, Docker, REST API"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Salary Range</label>
+                <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Salary Range <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   value={postSalary}
                   onChange={(e) => setPostSalary(e.target.value)}
                   placeholder="$140,000 - $180,000"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Detailed Job Description &amp; Responsibilities</label>
+                <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Detailed Job Description &amp; Responsibilities <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <textarea
                   rows={5}
                   required
                   value={postDesc}
                   onChange={(e) => setPostDesc(e.target.value)}
                   placeholder="Describe role responsibilities, team structure, and qualifications..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg"
                 />
               </div>
 
@@ -623,52 +664,88 @@ export const CompanyPortal = ({ onBackToHome }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredApplications.map((app) => (
-                    <tr key={app.id}>
-                      <td className="font-bold text-slate-900">
-                        {app.candidate?.fullName || app.candidate?.username || 'John Doe'}
-                        <div className="text-[11px] text-slate-500">{app.candidate?.email}</div>
-                      </td>
-                      <td>{app.job?.title}</td>
-                      <td className="text-slate-600 text-xs">{app.extractedEducation || 'Computer Science'}</td>
-                      <td>
-                        <span className="px-2.5 py-1 rounded bg-blue-100 text-blue-800 font-bold text-xs">
-                          {app.matchScore}% Match
-                        </span>
-                      </td>
-                      <td>
-                        <select
-                          value={app.status}
-                          onChange={(e) => handleUpdateStatus(app.id, e.target.value)}
-                          className="px-2 py-1 text-xs border border-slate-300 rounded bg-white font-semibold"
-                        >
-                          <option value="APPLIED">APPLIED</option>
-                          <option value="UNDER_REVIEW">UNDER REVIEW</option>
-                          <option value="INTERVIEWING">INTERVIEWING</option>
-                          <option value="OFFERED">OFFERED</option>
-                          <option value="REJECTED">REJECTED</option>
-                        </select>
-                      </td>
-                      <td className="text-right space-x-1">
-                        <button
-                          onClick={() => setSelectedCandidateForResume(app)}
-                          className="p-1.5 rounded text-slate-600 hover:text-blue-600 hover:bg-slate-100"
-                          title="View Resume Detail"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => { setSelectedCandidateForInterview(app); setIsSchedulerOpen(true); }}
-                          className="px-2.5 py-1 rounded bg-indigo-600 text-white font-bold text-[11px]"
-                        >
-                          Schedule
-                        </button>
+                  {appsLoading ? (
+                    <TableRowSkeleton cols={6} rows={4} />
+                  ) : paginatedApplications.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-6 text-slate-500 dark:text-zinc-400">
+                        No candidate applications found for the selected filter.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedApplications.map((app) => (
+                      <tr key={app.id}>
+                        <td className="font-bold text-slate-900 dark:text-white">
+                          {app.candidate?.fullName || app.candidate?.username || 'John Doe'}
+                          <div className="text-[11px] text-slate-500 dark:text-zinc-400">{app.candidate?.email}</div>
+                        </td>
+                        <td className="dark:text-zinc-200">{app.job?.title}</td>
+                        <td className="text-slate-600 dark:text-zinc-400 text-xs">{app.extractedEducation || 'Computer Science'}</td>
+                        <td>
+                          <span className="px-2.5 py-1 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 font-bold text-xs">
+                            {app.matchScore}% Match
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            value={app.status}
+                            onChange={(e) => handleUpdateStatus(app.id, e.target.value)}
+                            className="px-2 py-1 text-xs border border-slate-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 dark:text-zinc-200 font-semibold"
+                          >
+                            <option value="APPLIED">APPLIED</option>
+                            <option value="UNDER_REVIEW">UNDER REVIEW</option>
+                            <option value="INTERVIEWING">INTERVIEWING</option>
+                            <option value="OFFERED">OFFERED</option>
+                            <option value="REJECTED">REJECTED</option>
+                          </select>
+                        </td>
+                        <td className="text-right space-x-1">
+                          <button
+                            onClick={() => setSelectedCandidateForResume(app)}
+                            className="p-1.5 rounded text-slate-600 dark:text-zinc-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                            title="View Resume Detail"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => { setSelectedCandidateForInterview(app); setIsSchedulerOpen(true); }}
+                            className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px]"
+                          >
+                            Schedule
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalAppPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800 text-xs text-slate-500 dark:text-zinc-400">
+                <div>
+                  Showing {(appPage - 1) * appsPerPage + 1} to {Math.min(appPage * appsPerPage, filteredApplications.length)} of {filteredApplications.length} candidates
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={appPage === 1}
+                    onClick={() => setAppPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-zinc-800 font-medium"
+                  >
+                    Previous
+                  </button>
+                  <span className="font-bold text-slate-800 dark:text-zinc-200">Page {appPage} of {totalAppPages}</span>
+                  <button
+                    disabled={appPage >= totalAppPages}
+                    onClick={() => setAppPage(p => Math.min(totalAppPages, p + 1))}
+                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-zinc-800 font-medium"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -42,7 +42,7 @@ export const MetricsStrip = () => {
   ];
 
   return (
-    <section id="metrics" className="scroll-mt-24">
+    <section id="analytics" className="scroll-mt-24">
       <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 lg:p-8 shadow-sm space-y-6 edge-glow-hover transition-colors">
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800 pb-4">

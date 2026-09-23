@@ -229,7 +229,7 @@ LANGUAGES: ${resumeData.languages.join(', ')}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-full border border-slate-200 dark:border-zinc-700 text-xs font-medium">
             <button
               onClick={() => setTemplate('modern')}
@@ -356,7 +356,9 @@ LANGUAGES: ${resumeData.languages.join(', ')}
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Full Name</label>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Full Name <span className="text-rose-500 font-bold ml-1">*</span>
+                  </label>
                   <input
                     type="text"
                     value={resumeData.personalInfo.fullName}
@@ -366,7 +368,9 @@ LANGUAGES: ${resumeData.languages.join(', ')}
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Professional Title</label>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Professional Title <span className="text-rose-500 font-bold ml-1">*</span>
+                  </label>
                   <input
                     type="text"
                     value={resumeData.personalInfo.title}
@@ -376,7 +380,9 @@ LANGUAGES: ${resumeData.languages.join(', ')}
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Email</label>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Email <span className="text-rose-500 font-bold ml-1">*</span>
+                  </label>
                   <input
                     type="text"
                     value={resumeData.personalInfo.email}
@@ -386,7 +392,9 @@ LANGUAGES: ${resumeData.languages.join(', ')}
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Phone</label>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Phone <span className="text-rose-500 font-bold ml-1">*</span>
+                  </label>
                   <input
                     type="text"
                     value={resumeData.personalInfo.phone}
@@ -400,7 +408,7 @@ LANGUAGES: ${resumeData.languages.join(', ')}
             {/* Section 2: Professional Summary */}
             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-zinc-800 pb-2">
-                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" /> 2. Professional Summary
+                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" /> 2. Professional Summary <span className="text-rose-500 font-bold ml-1">*</span>
               </h3>
               <textarea
                 rows={4}
@@ -475,18 +483,20 @@ LANGUAGES: ${resumeData.languages.join(', ')}
 
               {/* Add New Experience Form */}
               <div className="p-3 border border-dashed border-slate-300 dark:border-zinc-700 rounded-xl space-y-2 text-xs bg-slate-50/50 dark:bg-zinc-800/30">
-                <div className="font-bold text-slate-700 dark:text-zinc-300">Add New Work Experience</div>
+                <div className="font-bold text-slate-700 dark:text-zinc-300">
+                  Add New Work Experience (Role & Company <span className="text-rose-500 font-bold ml-1">*</span>)
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
-                    placeholder="Role Title"
+                    placeholder="Role Title *"
                     value={expRole}
                     onChange={(e) => setExpRole(e.target.value)}
                     className="px-2.5 py-1.5 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-md"
                   />
                   <input
                     type="text"
-                    placeholder="Company Name"
+                    placeholder="Company Name *"
                     value={expCompany}
                     onChange={(e) => setExpCompany(e.target.value)}
                     className="px-2.5 py-1.5 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-md"
@@ -537,10 +547,12 @@ LANGUAGES: ${resumeData.languages.join(', ')}
               </div>
 
               <div className="p-3 border border-dashed border-slate-300 dark:border-zinc-700 rounded-xl space-y-2 text-xs bg-slate-50/50 dark:bg-zinc-800/30">
-                <div className="font-bold text-slate-700 dark:text-zinc-300">Add Education</div>
+                <div className="font-bold text-slate-700 dark:text-zinc-300">
+                  Add Education (Degree & Institution <span className="text-rose-500 font-bold ml-1">*</span>)
+                </div>
                 <input
                   type="text"
-                  placeholder="Degree (e.g. B.S. Computer Science)"
+                  placeholder="Degree (e.g. B.S. Computer Science) *"
                   value={eduDegree}
                   onChange={(e) => setEduDegree(e.target.value)}
                   className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-md"

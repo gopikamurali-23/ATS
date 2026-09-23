@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { api } from '../api';
+import { useToast } from '../context/ToastContext';
 import { 
   FileSearch, Upload, CheckCircle2, AlertTriangle, Sparkles, RefreshCw, 
   BarChart2, Award, Zap, Check, X, FileText, Target, ArrowLeft
 } from 'lucide-react';
 
 export const AtsScoreAnalyzer = ({ availableJobs = [], onBack }) => {
+  const { warning: toastWarning, error: toastError, success: toastSuccess } = useToast();
   const [selectedJobId, setSelectedJobId] = useState('');
   const [customJobDesc, setCustomJobDesc] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -21,7 +23,7 @@ export const AtsScoreAnalyzer = ({ availableJobs = [], onBack }) => {
 
   const handleAnalyze = async () => {
     if (!resumeText.trim() && !resumeFile) {
-      alert("Please upload a resume file or paste your resume text to perform analysis.");
+      toastWarning("Please upload a resume file or paste your resume text to perform analysis.");
       return;
     }
 
@@ -103,7 +105,7 @@ export const AtsScoreAnalyzer = ({ availableJobs = [], onBack }) => {
           
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-zinc-800 pb-2">
-              <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Upload Resume or Paste Text
+              <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Upload Resume or Paste Text <span className="text-rose-500 font-bold ml-1">*</span>
             </h3>
 
             {/* File Upload Box */}

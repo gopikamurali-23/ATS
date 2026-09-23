@@ -1,0 +1,20 @@
+{
+  "name": "talentpulse-ats",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TalentPulse - AI-Powered Applicant Tracking System & Resume Intelligence Platform (Frontend)",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend"
+  },
+  "keywords": [
+    "ats",
+    "applicant-tracking-system",
+    "resume-builder",
+    "resume-analyzer",
+    "react",
+    "vite",
+    "tailwind"
+  ]
+}

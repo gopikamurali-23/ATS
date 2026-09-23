@@ -24,26 +24,30 @@ export const EcosystemTabs = ({ onSelectRole, onNavigateToJobs }) => {
           </div>
 
           {/* High-Radius Pill Tab Switcher */}
-          <div className="flex bg-slate-100 dark:bg-zinc-800 p-1.5 rounded-full border border-slate-200 dark:border-zinc-700 text-xs font-bold self-start md:self-auto">
+          <div className="flex flex-wrap sm:flex-nowrap bg-slate-100 dark:bg-zinc-800 p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-200 dark:border-zinc-700 text-xs font-bold w-full sm:w-auto gap-1">
             <button
               onClick={() => setActiveTab('candidate')}
-              className={`pill-btn px-5 py-2 rounded-full transition-all flex items-center gap-2 ${
+              className={`pill-btn px-3 sm:px-5 py-2 rounded-xl sm:rounded-full transition-all flex items-center justify-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial ${
                 activeTab === 'candidate'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-700 dark:text-zinc-300 hover:text-slate-900'
+                  : 'text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <UserCheck className="w-4 h-4" /> Candidate Career Center
+              <UserCheck className="w-4 h-4" />
+              <span className="hidden sm:inline">Candidate Career Center</span>
+              <span className="sm:hidden">Candidate Center</span>
             </button>
             <button
               onClick={() => setActiveTab('recruiter')}
-              className={`pill-btn px-5 py-2 rounded-full transition-all flex items-center gap-2 ${
+              className={`pill-btn px-3 sm:px-5 py-2 rounded-xl sm:rounded-full transition-all flex items-center justify-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial ${
                 activeTab === 'recruiter'
                   ? 'bg-[#0F2942] text-amber-400 shadow-md'
-                  : 'text-slate-700 dark:text-zinc-300 hover:text-slate-900'
+                  : 'text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Building2 className="w-4 h-4" /> Enterprise Talent Acquisition
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Enterprise Talent Acquisition</span>
+              <span className="sm:hidden">Enterprise Acquisition</span>
             </button>
           </div>
         </div>

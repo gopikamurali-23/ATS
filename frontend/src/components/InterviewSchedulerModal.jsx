@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from './common/Modal';
-import { Calendar, Clock, Video, Mail, User, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, Video, Mail, User, CheckCircle2, AlertCircle } from 'lucide-react';
+import { interviewScheduleSchema, formatZodErrors } from '../schemas/validationSchemas';
 
 export const InterviewSchedulerModal = ({ isOpen, onClose, candidate, jobTitle, onScheduled }) => {
   const [interviewDate, setInterviewDate] = useState('2026-09-20');
@@ -10,11 +11,32 @@ export const InterviewSchedulerModal = ({ isOpen, onClose, candidate, jobTitle, 
   const [notes, setNotes] = useState('First round technical evaluation covering Java Spring Boot, React, and system design.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState({});
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const candidateName = candidate?.candidate?.fullName || candidate?.fullName || 'Candidate';
+    const currentJobTitle = jobTitle || candidate?.job?.title || 'Engineer';
+
+    const result = interviewScheduleSchema.safeParse({
+      candidateName,
+      jobTitle: currentJobTitle,
+      date: interviewDate,
+      time: interviewTime,
+      type: interviewType,
+      meetingUrl,
+      notes
+    });
+
+    if (!result.success) {
+      setErrors(formatZodErrors(result.error));
+      return;
+    }
+
+    setErrors({});
     setIsSubmitting(true);
 
     setTimeout(() => {
@@ -24,9 +46,9 @@ export const InterviewSchedulerModal = ({ isOpen, onClose, candidate, jobTitle, 
       setTimeout(() => {
         if (onScheduled) {
           onScheduled({
-            candidateName: candidate?.candidate?.fullName || candidate?.fullName || 'Candidate',
+            candidateName,
             candidateEmail: candidate?.candidate?.email || candidate?.email,
-            jobTitle: jobTitle || candidate?.job?.title || 'Engineer',
+            jobTitle: currentJobTitle,
             date: interviewDate,
             time: interviewTime,
             type: interviewType,
@@ -59,6 +81,13 @@ export const InterviewSchedulerModal = ({ isOpen, onClose, candidate, jobTitle, 
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
+          {errors.form && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+              <span>{errors.form}</span>
+            </div>
+          )}
+
           <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/60 rounded-2xl border border-slate-200 dark:border-zinc-700/60 space-y-1">
             <div className="font-bold text-slate-900 dark:text-white">{candidate?.candidate?.fullName || candidate?.fullName || 'Candidate'}</div>
             <div className="text-[11px] text-slate-500 dark:text-zinc-400">Position: {jobTitle || candidate?.job?.title || 'Technical Position'}</div>
@@ -67,31 +96,43 @@ export const InterviewSchedulerModal = ({ isOpen, onClose, candidate, jobTitle, 
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Interview Date</label>
+              <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Interview Date <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="date"
                 required
                 value={interviewDate}
                 onChange={(e) => setInterviewDate(e.target.value)}
-                className="w-full px-3.5 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-xl"
+                className={`w-full px-3.5 py-2 border rounded-xl dark:bg-zinc-800 dark:text-white ${
+                  errors.date ? 'border-rose-500' : 'border-slate-300 dark:border-zinc-700'
+                }`}
               />
+              {errors.date && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{errors.date}</p>}
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Interview Time</label>
+              <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Interview Time <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="text"
                 required
                 value={interviewTime}
                 onChange={(e) => setInterviewTime(e.target.value)}
                 placeholder="e.g. 11:00 AM PST"
-                className="w-full px-3.5 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-xl"
+                className={`w-full px-3.5 py-2 border rounded-xl dark:bg-zinc-800 dark:text-white ${
+                  errors.time ? 'border-rose-500' : 'border-slate-300 dark:border-zinc-700'
+                }`}
               />
+              {errors.time && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{errors.time}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Interview Round / Format</label>
+            <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+              Interview Round / Format <span className="text-rose-500 font-bold ml-1">*</span>
+            </label>
             <select
               value={interviewType}
               onChange={(e) => setInterviewType(e.target.value)}
@@ -105,24 +146,34 @@ export const InterviewSchedulerModal = ({ isOpen, onClose, candidate, jobTitle, 
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Meeting Link (Google Meet / Teams)</label>
+            <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+              Meeting Link (Google Meet / Teams) <span className="text-rose-500 font-bold ml-1">*</span>
+            </label>
             <input
               type="text"
               required
               value={meetingUrl}
               onChange={(e) => setMeetingUrl(e.target.value)}
-              className="w-full px-3.5 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-xl"
+              className={`w-full px-3.5 py-2 border rounded-xl dark:bg-zinc-800 dark:text-white ${
+                errors.meetingUrl ? 'border-rose-500' : 'border-slate-300 dark:border-zinc-700'
+              }`}
             />
+            {errors.meetingUrl && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{errors.meetingUrl}</p>}
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">Notes for Candidate &amp; Interviewers</label>
+            <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+              Notes for Candidate &amp; Interviewers <span className="text-rose-500 font-bold ml-1">*</span>
+            </label>
             <textarea
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3.5 py-2 border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-xl"
+              className={`w-full px-3.5 py-2 border rounded-xl dark:bg-zinc-800 dark:text-white ${
+                errors.notes ? 'border-rose-500' : 'border-slate-300 dark:border-zinc-700'
+              }`}
             />
+            {errors.notes && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{errors.notes}</p>}
           </div>
 
           <div className="pt-2 flex justify-end gap-2">

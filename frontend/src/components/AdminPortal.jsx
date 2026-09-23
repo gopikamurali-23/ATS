@@ -432,35 +432,35 @@ export const AdminPortal = () => {
 
         {/* 6. SYSTEM HEALTH */}
         {activeTab === 'health' && (
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-6">
             <div>
-              <h2 className="text-base font-bold text-slate-900">Infrastructure &amp; Server Health Monitor</h2>
-              <p className="text-xs text-slate-500">Real-time status of REST API services, resume parsing worker threads, and memory footprint.</p>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Platform &amp; Client Engine Health Monitor</h2>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">Real-time status of client-side ATS intelligence services, persistent storage, and worker threads.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
-                <div className="text-emerald-800 font-bold">Node.js Express Server</div>
-                <div className="text-lg font-black text-emerald-900">PORT 8080 - ONLINE</div>
-                <div className="text-[11px] text-emerald-700">Latency: 12ms • Uptime: 99.98%</div>
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 space-y-1">
+                <div className="text-emerald-800 dark:text-emerald-300 font-bold">TalentPulse Client Engine</div>
+                <div className="text-lg font-black text-emerald-900 dark:text-emerald-100">CLIENT ARCH - ONLINE</div>
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-400">Latency: 0ms • High Resiliency</div>
               </div>
 
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
-                <div className="text-emerald-800 font-bold">Resume Parser Engine</div>
-                <div className="text-lg font-black text-emerald-900">ACTIVE</div>
-                <div className="text-[11px] text-emerald-700">pdf-parse &amp; mammoth initialized</div>
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 space-y-1">
+                <div className="text-emerald-800 dark:text-emerald-300 font-bold">Resume Parser Engine</div>
+                <div className="text-lg font-black text-emerald-900 dark:text-emerald-100">ACTIVE</div>
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-400">ATS Keyword Matcher Ready</div>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                <div className="text-slate-700 font-bold">In-Memory Data Store</div>
-                <div className="text-lg font-black text-slate-900">HEALTHY</div>
-                <div className="text-[11px] text-slate-500">Heap Used: 42.8 MB / 512 MB</div>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700/60 space-y-1">
+                <div className="text-slate-700 dark:text-zinc-300 font-bold">State &amp; Local Persistence</div>
+                <div className="text-lg font-black text-slate-900 dark:text-white">HEALTHY</div>
+                <div className="text-[11px] text-slate-500 dark:text-zinc-400">localStorage sync operational</div>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                <div className="text-slate-700 font-bold">JWT Token Auth Service</div>
-                <div className="text-lg font-black text-slate-900">OPERATIONAL</div>
-                <div className="text-[11px] text-slate-500">HMAC-SHA256 active</div>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700/60 space-y-1">
+                <div className="text-slate-700 dark:text-zinc-300 font-bold">Role-Based Auth Guard</div>
+                <div className="text-lg font-black text-slate-900 dark:text-white">OPERATIONAL</div>
+                <div className="text-[11px] text-slate-500 dark:text-zinc-400">Session JWT simulation active</div>
               </div>
             </div>
           </div>

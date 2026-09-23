@@ -9,7 +9,7 @@ export const TopBar = ({ onSelectRole, onNavigate }) => {
 
   return (
     <div className="bg-[#0b1727] text-white text-[11px] font-medium border-b border-slate-800/80 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between gap-3">
         
         {/* Left: Enterprise Announcement Strip */}
         <div className="flex items-center gap-2 overflow-hidden truncate">
@@ -17,14 +17,15 @@ export const TopBar = ({ onSelectRole, onNavigate }) => {
             <Sparkles className="w-3 h-3 text-blue-400" /> Platform Release
           </span>
           <div className="truncate text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-semibold">
-            <span>TalentPulse 3.0: Next-Gen AI Candidate Matching &amp; Resume Intelligence Live</span>
-            <span className="mx-2 text-slate-600">|</span>
-            <span className="text-amber-300 font-bold">50k+ Active Enterprise Profiles</span>
+            <span className="hidden sm:inline">TalentPulse 3.0: Next-Gen AI Candidate Matching &amp; Resume Intelligence Live</span>
+            <span className="sm:hidden">TalentPulse 3.0 AI Live</span>
+            <span className="mx-2 text-slate-600 hidden md:inline">|</span>
+            <span className="text-amber-300 font-bold hidden md:inline">50k+ Active Enterprise Profiles</span>
           </div>
         </div>
 
         {/* Right: Quick Links, Theme Switcher & Direct Access */}
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           
           <div className="hidden md:flex items-center gap-3 text-slate-300 border-r border-slate-800 pr-4">
             <a 
@@ -52,8 +53,8 @@ export const TopBar = ({ onSelectRole, onNavigate }) => {
             )}
           </button>
 
-          {/* Role Access Buttons */}
-          <div className="flex items-center gap-2">
+          {/* Role Access Buttons (Responsive on sm+) */}
+          <div className="hidden sm:flex items-center gap-2">
             <button
               onClick={() => onSelectRole('candidate')}
               className="pill-btn px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] shadow-sm flex items-center gap-1 transition-all"
@@ -74,4 +75,3 @@ export const TopBar = ({ onSelectRole, onNavigate }) => {
     </div>
   );
 };
-

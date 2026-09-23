@@ -7,6 +7,7 @@ import { CompanyPortal } from './components/CompanyPortal';
 import { AdminPortal } from './components/AdminPortal';
 import { AuthModal } from './components/AuthModal';
 import { Footer } from './components/Footer';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 const AppContent = () => {
@@ -86,11 +87,23 @@ const AppContent = () => {
 
       // Role-Based Router Separation
       if (user.role === 'ROLE_ADMIN') {
-        return <AdminPortal onBackToHome={() => setCurrentNav('home')} />;
+        return (
+          <ErrorBoundary title="Admin Portal Error">
+            <AdminPortal onBackToHome={() => setCurrentNav('home')} />
+          </ErrorBoundary>
+        );
       } else if (user.role === 'ROLE_COMPANY') {
-        return <CompanyPortal onBackToHome={() => setCurrentNav('home')} />;
+        return (
+          <ErrorBoundary title="Recruiter Suite Error">
+            <CompanyPortal onBackToHome={() => setCurrentNav('home')} />
+          </ErrorBoundary>
+        );
       } else if (user.role === 'ROLE_CANDIDATE') {
-        return <CandidatePortal onBackToHome={() => setCurrentNav('home')} />;
+        return (
+          <ErrorBoundary title="Candidate Career Center Error">
+            <CandidatePortal onBackToHome={() => setCurrentNav('home')} />
+          </ErrorBoundary>
+        );
       }
 
       // Fallback Access Control Rejection

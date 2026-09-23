@@ -6,6 +6,14 @@ import {
   User, Briefcase, Lock, Mail, Phone, Building, ArrowRight, ShieldCheck, 
   CheckCircle2, AlertCircle, RefreshCw, KeyRound, Check, X, Shield 
 } from 'lucide-react';
+import { 
+  candidateRegisterSchema, 
+  recruiterRegisterSchema, 
+  loginSchema, 
+  forgotPasswordSchema, 
+  resetPasswordSchema, 
+  formatZodErrors 
+} from '../schemas/validationSchemas';
 
 export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelected }) => {
   const { login, register, loginAsDemo, error, setError } = useAuth();
@@ -132,129 +140,64 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
   };
   const isPasswordValid = passReqs.length && passReqs.uppercase && passReqs.lowercase && passReqs.number && passReqs.special;
 
-  // JAVASCRIPT VALIDATION: APPLICANT FORM (WITH STRICT 18-75 AGE RANGE)
+  // ZOD RUNTIME VALIDATION: APPLICANT FORM (WITH STRICT 18-75 AGE RANGE)
   const validateApplicantForm = () => {
-    const errs = {};
+    const result = candidateRegisterSchema.safeParse({
+      fullName,
+      age,
+      phone,
+      email,
+      password,
+      confirmPassword
+    });
 
-    // Name: letters and spaces only
-    if (!fullName.trim()) {
-      errs.fullName = 'Full Name is required';
-    } else if (!/^[a-zA-Z\s]+$/.test(fullName.trim())) {
-      errs.fullName = 'Name must contain only letters and spaces.';
+    if (!result.success) {
+      setErrors(formatZodErrors(result.error));
+      return false;
     }
 
-    // Age: numeric values strictly between 18 and 75
-    if (!age.toString().trim()) {
-      errs.age = 'Age is required';
-    } else {
-      const numAge = Number(age);
-      if (isNaN(numAge) || !Number.isInteger(numAge) || numAge < 18 || numAge > 75) {
-        errs.age = 'Please enter a valid age between 18 and 75.';
-      }
-    }
-
-    // Email
-    if (!email.trim()) {
-      errs.email = 'Email address is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errs.email = 'Please enter a valid email address.';
-    }
-
-    // Phone: valid phone format
-    if (!phone.trim()) {
-      errs.phone = 'Phone number is required';
-    } else if (!/^\+?[0-9\s-]{10,15}$/.test(phone.trim())) {
-      errs.phone = 'Please enter a valid 10-digit phone number.';
-    }
-
-    // Password
-    if (!password) {
-      errs.password = 'Password is required';
-    } else if (!isPasswordValid) {
-      errs.password = 'Password does not meet required complexity standards.';
-    }
-
-    // Confirm Password
-    if (!confirmPassword) {
-      errs.confirmPassword = 'Please confirm your password';
-    } else if (confirmPassword !== password) {
-      errs.confirmPassword = 'Passwords do not match.';
-    }
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+    setErrors({});
+    return true;
   };
 
-  // JAVASCRIPT VALIDATION: RECRUITER FORM
+  // ZOD RUNTIME VALIDATION: RECRUITER FORM
   const validateRecruiterForm = () => {
-    const errs = {};
+    const result = recruiterRegisterSchema.safeParse({
+      fullName,
+      companyName,
+      email,
+      phone,
+      password,
+      confirmPassword
+    });
 
-    // Name: letters and spaces only
-    if (!fullName.trim()) {
-      errs.fullName = 'Full Name is required';
-    } else if (!/^[a-zA-Z\s]+$/.test(fullName.trim())) {
-      errs.fullName = 'Name must contain only letters and spaces.';
+    if (!result.success) {
+      setErrors(formatZodErrors(result.error));
+      return false;
     }
 
-    // Work Email
-    if (!email.trim()) {
-      errs.email = 'Work email address is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errs.email = 'Please enter a valid work email address.';
-    }
-
-    // Phone: valid format
-    if (!phone.trim()) {
-      errs.phone = 'Phone number is required';
-    } else if (!/^\+?[0-9\s-]{10,15}$/.test(phone.trim())) {
-      errs.phone = 'Please enter a valid phone number.';
-    }
-
-    // Company Name
-    if (!companyName.trim()) {
-      errs.companyName = 'Company name is required';
-    }
-
-    // Password
-    if (!password) {
-      errs.password = 'Password is required';
-    } else if (!isPasswordValid) {
-      errs.password = 'Password does not meet required complexity standards.';
-    }
-
-    // Confirm Password
-    if (!confirmPassword) {
-      errs.confirmPassword = 'Please confirm your password';
-    } else if (confirmPassword !== password) {
-      errs.confirmPassword = 'Passwords do not match.';
-    }
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+    setErrors({});
+    return true;
   };
 
-  // SUBMIT HANDLERS
+  // SUBMIT HANDLERS WITH ZOD VALIDATION
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    const errs = {};
+    const result = loginSchema.safeParse({
+      loginIdentifier,
+      loginPassword,
+      captcha: userCaptchaInput
+    });
 
-    if (!loginIdentifier.trim()) {
-      errs.loginIdentifier = 'Please enter your email or username';
-    }
-    if (!loginPassword) {
-      errs.loginPassword = 'Please enter your password';
+    if (!result.success) {
+      setErrors(formatZodErrors(result.error));
+      return;
     }
 
-    // CAPTCHA VALIDATION
-    if (!userCaptchaInput.trim()) {
-      errs.captcha = 'Security CAPTCHA verification is required.';
-    } else if (userCaptchaInput.trim().toUpperCase() !== captchaCode.toUpperCase()) {
-      errs.captcha = 'Invalid CAPTCHA code. Please enter the exact characters shown in the box.';
+    // CAPTCHA Code Match Verification
+    if (userCaptchaInput.trim().toUpperCase() !== captchaCode.toUpperCase()) {
+      setErrors({ captcha: 'Invalid CAPTCHA code. Please enter the exact characters shown in the box.' });
       generateCaptcha();
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
       return;
     }
 
@@ -377,11 +320,12 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
     } catch (err) {}
   };
 
-  // FORGOT PASSWORD HANDLERS
+  // FORGOT PASSWORD HANDLERS WITH ZOD
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
-    if (!resetEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim())) {
-      setErrors({ resetEmail: 'Please enter a valid email address.' });
+    const result = forgotPasswordSchema.safeParse({ email: resetEmail });
+    if (!result.success) {
+      setErrors({ resetEmail: result.error.issues[0]?.message || 'Please enter a valid email address.' });
       return;
     }
 
@@ -400,13 +344,14 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
   const handleResetPasswordSubmit = async (e) => {
     e.preventDefault();
-    const errs = {};
-    if (!resetOtp || resetOtp.length !== 6) errs.resetOtp = 'Please enter valid 6-digit code.';
-    if (!newPassword || newPassword.length < 8) errs.newPassword = 'Minimum 8 characters required.';
-    if (confirmNewPassword !== newPassword) errs.confirmNewPassword = 'Passwords do not match.';
+    const result = resetPasswordSchema.safeParse({
+      otp: resetOtp,
+      newPassword,
+      confirmNewPassword
+    });
 
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
+    if (!result.success) {
+      setErrors(formatZodErrors(result.error));
       return;
     }
 
@@ -547,6 +492,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
                 {viewMode === 'login-applicant' ? 'Email Address or Username' : 'Work Email Address'}
+                <span className="text-rose-500 font-bold ml-1">*</span>
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
@@ -565,7 +511,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Password</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                  Password <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <button
                   type="button"
                   onClick={() => setViewMode('forgot-password')}
@@ -593,7 +541,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 rounded-2xl space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Security CAPTCHA Verification
+                  <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Security CAPTCHA Verification <span className="text-rose-500 font-bold ml-1">*</span>
                 </label>
                 <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-semibold uppercase">Human Check</span>
               </div>
@@ -664,7 +612,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Full Name</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Full Name <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="text"
                 value={fullName}
@@ -679,7 +629,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Age (18–75)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Age (18–75) <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   value={age}
@@ -693,7 +645,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Phone Number</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Phone Number <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   value={phone}
@@ -708,7 +662,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Email Address</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Email Address <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="text"
                 value={email}
@@ -723,7 +679,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
             {/* Password & Requirements Live Checklist */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Password</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Password <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="password"
                 value={password}
@@ -755,7 +713,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Confirm Password</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Confirm Password <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -795,7 +755,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Full Name</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Full Name <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="text"
                 value={fullName}
@@ -809,7 +771,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Work Email Address</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Work Email Address <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="text"
                 value={email}
@@ -824,7 +788,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Phone Number</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Phone Number <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   value={phone}
@@ -838,7 +804,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Company Name</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Company Name <span className="text-rose-500 font-bold ml-1">*</span>
+                </label>
                 <input
                   type="text"
                   value={companyName}
@@ -854,7 +822,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
             {/* Password & Requirements Live Checklist */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Password</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Password <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="password"
                 value={password}
@@ -886,7 +856,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Confirm Password</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Confirm Password <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -1041,7 +1013,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Registered Email</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Registered Email <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="text"
                 value={resetEmail}
@@ -1083,7 +1057,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">6-Digit OTP Code</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                6-Digit OTP Code <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="text"
                 maxLength={6}
@@ -1096,7 +1072,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">New Password</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                New Password <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="password"
                 value={newPassword}
@@ -1108,7 +1086,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">Confirm New Password</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                Confirm New Password <span className="text-rose-500 font-bold ml-1">*</span>
+              </label>
               <input
                 type="password"
                 value={confirmNewPassword}
