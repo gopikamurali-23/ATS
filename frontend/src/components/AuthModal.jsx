@@ -95,8 +95,13 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
   useEffect(() => {
     if (initialMode) {
-      if (initialMode === 'login') setViewMode('login-applicant');
-      else setViewMode(initialMode);
+      if (initialMode === 'login') {
+        setViewMode(selectedRole === 'ROLE_COMPANY' ? 'login-recruiter' : 'login-applicant');
+      } else if (initialMode === 'signup' || initialMode === 'register' || initialMode === 'role-select') {
+        setViewMode(selectedRole === 'ROLE_COMPANY' ? 'register-recruiter' : 'register-applicant');
+      } else {
+        setViewMode(initialMode);
+      }
     }
   }, [initialMode, isOpen]);
 
@@ -380,15 +385,17 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
       isOpen={isOpen}
       onClose={handleClose}
       title={
-        viewMode === 'role-select' ? 'Select Portal Access' :
-        viewMode.startsWith('login') ? 'Sign In to TalentPulse' :
-        viewMode.startsWith('register') ? 'Create Your Account' :
+        viewMode === 'role-select' ? 'Create a New Account' :
+        viewMode.startsWith('login') ? 'Log In to TalentPulse' :
+        viewMode.startsWith('register') ? 'Create a New Account' :
         viewMode === 'email-verification' ? 'Verify Your Email' :
         viewMode === 'otp-verification' ? 'Enter Verification Code' :
         'Account Password Recovery'
       }
       subtitle={
-        viewMode === 'role-select' ? 'Choose whether you are a Job Seeker or Employer' :
+        viewMode === 'role-select' ? 'Sign up as a new user to start applying or hiring' :
+        viewMode.startsWith('login') ? 'Sign in to access your existing account and dashboard' :
+        viewMode.startsWith('register') ? 'Sign up as a new user to start applying or hiring' :
         viewMode === 'email-verification' ? `We've sent a verification link to ${email}` :
         viewMode === 'otp-verification' ? 'Enter the 6-digit OTP code sent to your email' :
         'Manage your secure credentials for TalentPulse'
@@ -413,11 +420,43 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
           </div>
         )}
 
-        {/* 1. ROLE SELECT SCREEN */}
+        {/* Primary Toggle: Log In (Existing User) vs Sign Up (New User) */}
+        {['login-applicant', 'login-recruiter', 'register-applicant', 'register-recruiter', 'role-select'].includes(viewMode) && (
+          <div className="flex bg-slate-100 dark:bg-zinc-800 p-1.5 rounded-2xl border border-slate-200 dark:border-zinc-700 text-xs font-bold shadow-inner">
+            <button
+              type="button"
+              onClick={() => setViewMode(selectedRole === 'ROLE_COMPANY' ? 'login-recruiter' : 'login-applicant')}
+              className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                viewMode.startsWith('login')
+                  ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-md font-extrabold'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Log In</span>
+              <span className="text-[10px] font-normal opacity-75 hidden sm:inline">(Existing User)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode(selectedRole === 'ROLE_COMPANY' ? 'register-recruiter' : 'register-applicant')}
+              className={`flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                viewMode.startsWith('register') || viewMode === 'role-select'
+                  ? 'bg-blue-600 text-white shadow-md font-extrabold'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Sign Up</span>
+              <span className="text-[10px] font-normal opacity-75 hidden sm:inline">(New User)</span>
+            </button>
+          </div>
+        )}
+
+        {/* 1. ROLE SELECT SCREEN (SIGN UP ENTRY) */}
         {viewMode === 'role-select' && (
           <div className="space-y-4">
             <p className="text-xs text-slate-600 dark:text-zinc-400 text-center font-medium">
-              Continue as:
+              Create a new account as:
             </p>
 
             <div className="grid grid-cols-2 gap-4">
@@ -431,7 +470,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 </div>
                 <div>
                   <div className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover:text-blue-600">Candidate</div>
-                  <div className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">Job Seeker Portal</div>
+                  <div className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">Job Seeker Sign Up</div>
                 </div>
               </button>
 
@@ -445,7 +484,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 </div>
                 <div>
                   <div className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover:text-indigo-600">Recruiter</div>
-                  <div className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">Employer Portal</div>
+                  <div className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">Employer Sign Up</div>
                 </div>
               </button>
             </div>
@@ -457,7 +496,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 onClick={() => setViewMode('login-applicant')}
                 className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
               >
-                Sign in here
+                Log in here
               </button>
             </div>
           </div>
@@ -471,7 +510,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-full border border-slate-200 dark:border-zinc-700 text-xs font-semibold">
               <button
                 type="button"
-                onClick={() => setViewMode('login-applicant')}
+                onClick={() => { setSelectedRole('ROLE_CANDIDATE'); setViewMode('login-applicant'); }}
                 className={`flex-1 py-1.5 rounded-full transition-all flex items-center justify-center gap-1.5 ${
                   viewMode === 'login-applicant' ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400'
                 }`}
@@ -480,7 +519,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('login-recruiter')}
+                onClick={() => { setSelectedRole('ROLE_COMPANY'); setViewMode('login-recruiter'); }}
                 className={`flex-1 py-1.5 rounded-full transition-all flex items-center justify-center gap-1.5 ${
                   viewMode === 'login-recruiter' ? 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400'
                 }`}
@@ -581,24 +620,57 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 viewMode === 'login-applicant' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-slate-800'
               }`}
             >
-              {isSubmitting ? 'Verifying Credentials...' : `Sign In to ${viewMode === 'login-applicant' ? 'Applicant' : 'Recruiter'} Portal`} <ArrowRight className="w-3.5 h-3.5" />
+              {isSubmitting ? 'Verifying Credentials...' : `Log In to Account (${viewMode === 'login-applicant' ? 'Candidate' : 'Recruiter'})`} <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
-            {/* Quick Demo Credentials Ref */}
-            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700 text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
-              <div className="font-bold text-slate-700 dark:text-zinc-300">Demo Login Quick Ref:</div>
-              <div>Applicant: <span className="font-mono text-slate-800 dark:text-zinc-200 font-semibold">john.doe@example.com</span> / <span className="font-mono text-slate-800 dark:text-zinc-200 font-semibold">john123</span></div>
-              <div>Recruiter: <span className="font-mono text-slate-800 dark:text-zinc-200 font-semibold">careers@google.com</span> / <span className="font-mono text-slate-800 dark:text-zinc-200 font-semibold">google123</span></div>
+            {/* Quick Demo Credentials Ref with 1-Click Autofill */}
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700 text-[11px] text-slate-500 dark:text-zinc-400 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-700 dark:text-zinc-300">Existing User Demo Credentials:</span>
+                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold">1-Click Quick Fill</span>
+              </div>
+              <div className="flex items-center justify-between gap-2 p-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
+                <div className="truncate">Candidate: <span className="font-mono text-slate-800 dark:text-zinc-200 font-semibold">john.doe@example.com</span></div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode('login-applicant');
+                    setSelectedRole('ROLE_CANDIDATE');
+                    setLoginIdentifier('john.doe@example.com');
+                    setLoginPassword('john123');
+                    setUserCaptchaInput(captchaCode);
+                  }}
+                  className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] flex-shrink-0 transition-colors"
+                >
+                  Fill Candidate
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-2 p-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
+                <div className="truncate">Recruiter: <span className="font-mono text-slate-800 dark:text-zinc-200 font-semibold">careers@google.com</span></div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode('login-recruiter');
+                    setSelectedRole('ROLE_COMPANY');
+                    setLoginIdentifier('careers@google.com');
+                    setLoginPassword('google123');
+                    setUserCaptchaInput(captchaCode);
+                  }}
+                  className="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] flex-shrink-0 transition-colors"
+                >
+                  Fill Recruiter
+                </button>
+              </div>
             </div>
 
             <div className="text-center text-xs text-slate-500 dark:text-zinc-400 pt-2 border-t border-slate-100 dark:border-zinc-800">
-              Don't have an account?{' '}
+              New user without an account?{' '}
               <button
                 type="button"
-                onClick={() => setViewMode('role-select')}
+                onClick={() => setViewMode(selectedRole === 'ROLE_COMPANY' ? 'register-recruiter' : 'register-applicant')}
                 className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
               >
-                Register Now
+                Sign up here
               </button>
             </div>
           </form>
@@ -607,8 +679,27 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
         {/* 3. APPLICANT REGISTRATION FORM (STRICT 18-75 AGE RANGE) */}
         {viewMode === 'register-applicant' && (
           <form onSubmit={handleApplicantRegisterSubmit} className="space-y-3">
-            <div className="p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-              <User className="w-4 h-4" /> Create Candidate Account
+            
+            {/* Sign Up Role Switcher Tabs */}
+            <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-full border border-slate-200 dark:border-zinc-700 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => { setSelectedRole('ROLE_CANDIDATE'); setViewMode('register-applicant'); }}
+                className={`flex-1 py-1.5 rounded-full transition-all flex items-center justify-center gap-1.5 ${
+                  viewMode === 'register-applicant' ? 'bg-blue-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" /> Candidate (Job Seeker)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedRole('ROLE_COMPANY'); setViewMode('register-recruiter'); }}
+                className={`flex-1 py-1.5 rounded-full transition-all flex items-center justify-center gap-1.5 ${
+                  viewMode === 'register-recruiter' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" /> Recruiter (Employer)
+              </button>
             </div>
 
             <div>
@@ -729,19 +820,22 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div className="pt-2 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setViewMode('role-select')}
-                className="text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-800 font-semibold"
-              >
-                ← Back
-              </button>
+              <div className="text-xs text-slate-500 dark:text-zinc-400">
+                Already registered?{' '}
+                <button
+                  type="button"
+                  onClick={() => setViewMode('login-applicant')}
+                  className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Log in
+                </button>
+              </div>
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-full shadow-md"
               >
-                {isSubmitting ? 'Registering...' : 'Register Candidate Account'}
+                {isSubmitting ? 'Registering...' : 'Sign Up as Candidate'}
               </button>
             </div>
           </form>
@@ -750,8 +844,27 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
         {/* 4. RECRUITER REGISTRATION FORM */}
         {viewMode === 'register-recruiter' && (
           <form onSubmit={handleRecruiterRegisterSubmit} className="space-y-3">
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-semibold text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
-              <Briefcase className="w-4 h-4" /> Create Recruiter Account
+            
+            {/* Sign Up Role Switcher Tabs */}
+            <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-full border border-slate-200 dark:border-zinc-700 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => { setSelectedRole('ROLE_CANDIDATE'); setViewMode('register-applicant'); }}
+                className={`flex-1 py-1.5 rounded-full transition-all flex items-center justify-center gap-1.5 ${
+                  viewMode === 'register-applicant' ? 'bg-blue-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" /> Candidate (Job Seeker)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedRole('ROLE_COMPANY'); setViewMode('register-recruiter'); }}
+                className={`flex-1 py-1.5 rounded-full transition-all flex items-center justify-center gap-1.5 ${
+                  viewMode === 'register-recruiter' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" /> Recruiter (Employer)
+              </button>
             </div>
 
             <div>
@@ -872,19 +985,22 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             <div className="pt-2 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setViewMode('role-select')}
-                className="text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-800 font-semibold"
-              >
-                ← Back
-              </button>
+              <div className="text-xs text-slate-500 dark:text-zinc-400">
+                Already registered?{' '}
+                <button
+                  type="button"
+                  onClick={() => setViewMode('login-recruiter')}
+                  className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  Log in
+                </button>
+              </div>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-2.5 bg-slate-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-slate-800 font-bold text-xs rounded-full shadow-md"
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-full shadow-md"
               >
-                {isSubmitting ? 'Registering...' : 'Register Recruiter Account'}
+                {isSubmitting ? 'Registering...' : 'Sign Up as Recruiter'}
               </button>
             </div>
           </form>

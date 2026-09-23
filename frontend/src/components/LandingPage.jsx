@@ -109,16 +109,16 @@ export const LandingPage = ({ onNavigateToJobs, onNavigateToAnalyzer, onOpenAuth
 
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <button
-              onClick={() => onSelectRole('candidate')}
-              className="pill-btn px-7 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md text-center transition-all"
+              onClick={() => onOpenAuthModal('login')}
+              className="pill-btn px-7 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-md text-center transition-all border border-slate-700"
             >
-              Candidate Portal
+              Log In (Existing User)
             </button>
             <button
-              onClick={() => onSelectRole('recruiter')}
-              className="pill-btn px-7 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md text-center transition-all"
+              onClick={() => onOpenAuthModal('signup')}
+              className="pill-btn px-7 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md text-center transition-all"
             >
-              Recruiter Portal
+              Sign Up (New User)
             </button>
           </div>
         </div>

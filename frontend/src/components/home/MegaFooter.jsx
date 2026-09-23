@@ -56,7 +56,7 @@ export const MegaFooter = ({ onNavigate, onOpenAuthModal, onSelectRole }) => {
               Recruiter Suite
             </div>
             <ul className="space-y-2 text-slate-300 font-medium">
-              <li><button onClick={() => onSelectRole('recruiter')} className="hover:text-amber-300 transition-colors">Recruiter Portal</button></li>
+              <li><button onClick={() => onOpenAuthModal('signup')} className="hover:text-amber-300 transition-colors">Employer Sign Up</button></li>
               <li><button onClick={() => onSelectRole('recruiter')} className="hover:text-amber-300 transition-colors">Post Requisitions</button></li>
               <li><button onClick={() => onSelectRole('recruiter')} className="hover:text-amber-300 transition-colors">Shortlist Candidate Pipeline</button></li>
               <li><button onClick={() => onSelectRole('recruiter')} className="hover:text-amber-300 transition-colors">Interview Scheduler</button></li>

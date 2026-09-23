@@ -37,7 +37,7 @@ const AppContent = () => {
         <LandingPage
           onNavigateToJobs={() => setCurrentNav('jobs')}
           onNavigateToAnalyzer={() => setCurrentNav('portal')}
-          onOpenAuthModal={() => handleOpenAuthModal('login')}
+          onOpenAuthModal={(mode) => handleOpenAuthModal(mode || 'login')}
           onSelectRole={(role) => {
             if (user) {
               setCurrentNav('portal');
@@ -72,13 +72,13 @@ const AppContent = () => {
                 onClick={() => handleOpenAuthModal('login')}
                 className="pill-btn px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-colors"
               >
-                Sign In to TalentPulse
+                Log In (Existing User)
               </button>
               <button
-                onClick={handleOpenRoleSelect}
+                onClick={() => handleOpenAuthModal('signup')}
                 className="pill-btn px-5 py-2.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-bold text-xs transition-colors"
               >
-                Create Account
+                Sign Up (New User)
               </button>
             </div>
           </div>
@@ -130,8 +130,8 @@ const AppContent = () => {
       <LandingPage
         onNavigateToJobs={() => setCurrentNav('jobs')}
         onNavigateToAnalyzer={() => setCurrentNav('portal')}
-        onOpenAuthModal={() => handleOpenAuthModal('login')}
-        onSelectRole={handleOpenRoleSelect}
+        onOpenAuthModal={(mode) => handleOpenAuthModal(mode || 'login')}
+        onSelectRole={() => handleOpenAuthModal('signup')}
       />
     );
   };
@@ -144,7 +144,6 @@ const AppContent = () => {
         currentNav={currentNav}
         onNavigate={(nav) => setCurrentNav(nav)}
         onOpenAuthModal={handleOpenAuthModal}
-        onOpenRoleSelect={handleOpenRoleSelect}
       />
 
       {/* Main Container */}

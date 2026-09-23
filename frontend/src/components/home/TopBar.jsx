@@ -53,21 +53,6 @@ export const TopBar = ({ onSelectRole, onNavigate }) => {
             )}
           </button>
 
-          {/* Role Access Buttons (Responsive on sm+) */}
-          <div className="hidden sm:flex items-center gap-2">
-            <button
-              onClick={() => onSelectRole('candidate')}
-              className="pill-btn px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] shadow-sm flex items-center gap-1 transition-all"
-            >
-              <UserCheck className="w-3 h-3" /> Candidate Portal
-            </button>
-            <button
-              onClick={() => onSelectRole('recruiter')}
-              className="pill-btn px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow-sm flex items-center gap-1 transition-all"
-            >
-              <Building2 className="w-3 h-3" /> Recruiter Portal
-            </button>
-          </div>
 
         </div>
 
