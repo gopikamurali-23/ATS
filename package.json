@@ -2,9 +2,13 @@
   "name": "talentpulse-ats",
   "version": "1.0.0",
   "private": true,
-  "description": "TalentPulse - AI-Powered Applicant Tracking System & Resume Intelligence Platform (Frontend)",
+  "description": "TalentPulse - AI-Powered Applicant Tracking System & Resume Intelligence Platform",
   "scripts": {
-    "dev": "npm run dev --prefix frontend",
+    "start": "concurrently -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm run dev --prefix frontend",
+    "seed": "npm run seed --prefix backend",
     "build": "npm run build --prefix frontend",
     "preview": "npm run preview --prefix frontend"
   },
@@ -15,6 +19,11 @@
     "resume-analyzer",
     "react",
     "vite",
-    "tailwind"
-  ]
+    "tailwind",
+    "express",
+    "mongodb"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }

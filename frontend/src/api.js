@@ -1,5 +1,7 @@
-// TalentPulse ATS - Pure Client-Side Resilient Data Service Layer
-// Completely standalone with persistent localStorage support for Review 1
+// TalentPulse ATS - Full-Stack Connected API Service Layer
+// Connects to Node.js / Express & MongoDB Backend with Resilient Local Fallback
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const STORAGE_KEYS = {
   JOBS: 'talentpulse_jobs_store',
@@ -13,7 +15,7 @@ export const getAuthHeader = () => {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
-// Seed Jobs Dataset
+// Seed Jobs Dataset (Fallback)
 const INITIAL_JOBS = [
   {
     id: 1,
@@ -82,7 +84,7 @@ const INITIAL_JOBS = [
   }
 ];
 
-// Seed Applications Dataset
+// Seed Applications Dataset (Fallback)
 const INITIAL_APPLICATIONS = [
   {
     id: 101,
@@ -131,7 +133,6 @@ const INITIAL_APPLICATIONS = [
   }
 ];
 
-// Helper to simulate smooth micro-delay for realistic UI feedback
 const delay = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Storage helper utilities
@@ -179,7 +180,6 @@ const saveStoredUsers = (users) => {
   } catch (e) {}
 };
 
-// Known technical dictionary for client-side ATS analysis
 const TECH_SKILLS_DICTIONARY = [
   'Java', 'Spring Boot', 'Spring Data JPA', 'Microservices', 'PostgreSQL', 
   'Docker', 'REST API', 'Git', 'SQL', 'React', 'TypeScript', 'JavaScript', 
@@ -193,10 +193,34 @@ export const api = {
   // AUTHENTICATION & IDENTITY APIS
   // ==========================================
   async login(loginIdentifier, password, expectedRole) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loginIdentifier, password, expectedRole })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.token) localStorage.setItem('talentpulse_token', data.token);
+        return data;
+      }
+      
+      const errData = await response.json().catch(() => ({}));
+      if (response.status === 401 || response.status === 403 || response.status === 400) {
+        throw new Error(errData.message || 'Invalid credentials');
+      }
+    } catch (err) {
+      if (!err.message?.includes('Failed to fetch') && !err.message?.includes('NetworkError')) {
+        throw err;
+      }
+      console.warn('[TalentPulse API] Backend unreachable, falling back to local storage engine');
+    }
+
+    // Local storage fallback
     await delay(120);
     const idLower = (loginIdentifier || '').trim().toLowerCase();
 
-    // 1. Check Demo Accounts
     if ((idLower === 'john.doe@example.com' || idLower === 'john_doe' || idLower === 'john') && password === 'john123') {
       if (expectedRole && expectedRole === 'ROLE_COMPANY') {
         throw new Error('This account (john.doe@example.com) is a Candidate account. Please use Candidate Login.');
@@ -242,7 +266,6 @@ export const api = {
       };
     }
 
-    // 2. Check Custom Registered Users from localStorage
     const registeredUsers = getStoredUsers();
     const foundUser = registeredUsers.find(u => 
       (u.email?.toLowerCase() === idLower || u.username?.toLowerCase() === idLower) && u.password === password
@@ -271,6 +294,28 @@ export const api = {
   },
 
   async register(data) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const resData = await response.json();
+        if (resData.token) localStorage.setItem('talentpulse_token', resData.token);
+        return resData;
+      }
+
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || 'Registration failed');
+    } catch (err) {
+      if (!err.message?.includes('Failed to fetch') && !err.message?.includes('NetworkError')) {
+        throw err;
+      }
+      console.warn('[TalentPulse API] Backend unreachable, falling back to local storage engine');
+    }
+
     await delay(120);
     const registeredUsers = getStoredUsers();
     const existing = registeredUsers.find(u => u.email?.toLowerCase() === (data.email || '').toLowerCase());
@@ -304,11 +349,33 @@ export const api = {
   },
 
   async sendOtp(email) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (response.ok) return await response.json();
+    } catch (e) {}
+
     await delay(80);
     return { message: `Verification OTP sent to ${email}`, otpCodeDemo: '123456' };
   },
 
   async verifyOtp(email, otp) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+      if (response.ok) return await response.json();
+      const err = await response.json().catch(() => ({}));
+      if (err.message) throw new Error(err.message);
+    } catch (e) {
+      if (e.message && !e.message.includes('Failed to fetch')) throw e;
+    }
+
     await delay(80);
     if (otp === '123456' || (typeof otp === 'string' && otp.trim().length === 6)) {
       return { success: true, message: 'OTP verified successfully!', verified: true };
@@ -317,11 +384,33 @@ export const api = {
   },
 
   async forgotPassword(email) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (response.ok) return await response.json();
+    } catch (e) {}
+
     await delay(80);
     return { message: `Password reset verification code dispatched to ${email}`, otpCodeDemo: '123456' };
   },
 
   async resetPassword(email, otp, newPassword) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, newPassword })
+      });
+      if (response.ok) return await response.json();
+      const err = await response.json().catch(() => ({}));
+      if (err.message) throw new Error(err.message);
+    } catch (e) {
+      if (e.message && !e.message.includes('Failed to fetch')) throw e;
+    }
+
     await delay(100);
     if (otp === '123456' || (typeof otp === 'string' && otp.trim().length === 6)) {
       const users = getStoredUsers();
@@ -339,11 +428,37 @@ export const api = {
   // JOB REQUISITIONS APIS
   // ==========================================
   async getJobs() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs`);
+      if (response.ok) {
+        const jobs = await response.json();
+        return jobs.map(j => ({ ...j, id: j.id || j._id }));
+      }
+    } catch (e) {
+      console.warn('[TalentPulse API] Falling back to local stored jobs');
+    }
     await delay(60);
     return getStoredJobs();
   },
 
   async createJob(jobData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify(jobData)
+      });
+      if (response.ok) {
+        const created = await response.json();
+        return { ...created, id: created.id || created._id };
+      }
+    } catch (e) {
+      console.warn('[TalentPulse API] Falling back to local job storage');
+    }
+
     await delay(100);
     const jobs = getStoredJobs();
     const newJob = {
@@ -361,6 +476,21 @@ export const api = {
   // RESUME PARSING & ATS ANALYSIS APIS
   // ==========================================
   async parseResume(formData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ats/parse`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader()
+        },
+        body: formData
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.warn('[TalentPulse API] Falling back to local ATS parser');
+    }
+
     await delay(180);
     const resumeText = formData.get('resumeText') || '';
     const file = formData.get('resumeFile');
@@ -370,18 +500,15 @@ export const api = {
     const jobs = getStoredJobs();
     const targetJob = jobs.find(j => j.id == jobId) || jobs[0];
 
-    // Intelligent Skill Extraction from Resume Text
     const combinedContent = `${fileName} ${resumeText}`.toLowerCase();
     const extractedSkills = TECH_SKILLS_DICTIONARY.filter(skill => 
       combinedContent.includes(skill.toLowerCase())
     );
 
-    // If none matched, seed relevant default skills
     const finalExtractedSkills = extractedSkills.length > 0 
       ? extractedSkills 
       : ['Java', 'Spring Boot', 'React', 'TypeScript', 'SQL', 'Git', 'REST API', 'Docker'];
 
-    // Match against Target Job Requirements
     const reqSkillsList = (targetJob?.requiredSkills || '')
       .split(',')
       .map(s => s.trim())
@@ -395,11 +522,9 @@ export const api = {
       !finalExtractedSkills.some(ext => ext.toLowerCase() === req.toLowerCase())
     );
 
-    // Calculate Dynamic ATS Match Score
     const matchRatio = reqSkillsList.length > 0 ? (matchedSkills.length / reqSkillsList.length) : 0.85;
     const atsMatchScore = Math.min(98, Math.max(72, Math.round(matchRatio * 100)));
 
-    // Experience detection heuristic
     const expMatch = combinedContent.match(/(\d+)\+?\s*years?/i);
     const estimatedExperienceYears = expMatch ? parseInt(expMatch[1], 10) : 5;
 
@@ -419,6 +544,22 @@ export const api = {
   // JOB APPLICATION SUBMISSION & TRACKING APIS
   // ==========================================
   async applyToJob(formData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/apply`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader()
+        },
+        body: formData
+      });
+      if (response.ok) {
+        const app = await response.json();
+        return { ...app, id: app.id || app._id };
+      }
+    } catch (e) {
+      console.warn('[TalentPulse API] Falling back to local application storage');
+    }
+
     await delay(150);
     const parseResult = await this.parseResume(formData);
     const jobId = formData.get('jobId');
@@ -454,11 +595,31 @@ export const api = {
   },
 
   async getMyApplications() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/my`, {
+        headers: { ...getAuthHeader() }
+      });
+      if (response.ok) {
+        const apps = await response.json();
+        return apps.map(a => ({ ...a, id: a.id || a._id }));
+      }
+    } catch (e) {}
+
     await delay(60);
     return getStoredApplications();
   },
 
   async getRankedJobApplications(jobId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/job/${jobId}`, {
+        headers: { ...getAuthHeader() }
+      });
+      if (response.ok) {
+        const apps = await response.json();
+        return apps.map(a => ({ ...a, id: a.id || a._id }));
+      }
+    } catch (e) {}
+
     await delay(60);
     const apps = getStoredApplications();
     return apps
@@ -467,11 +628,36 @@ export const api = {
   },
 
   async getCompanyApplications() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/company`, {
+        headers: { ...getAuthHeader() }
+      });
+      if (response.ok) {
+        const apps = await response.json();
+        return apps.map(a => ({ ...a, id: a.id || a._id }));
+      }
+    } catch (e) {}
+
     await delay(60);
     return getStoredApplications();
   },
 
   async updateApplicationStatus(id, status) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        const app = await response.json();
+        return { ...app, id: app.id || app._id };
+      }
+    } catch (e) {}
+
     await delay(80);
     const apps = getStoredApplications();
     const app = apps.find(a => a.id == id);
@@ -486,6 +672,15 @@ export const api = {
   // DASHBOARD & ANALYTICS APIS
   // ==========================================
   async getDashboardStats() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/analytics/stats`, {
+        headers: { ...getAuthHeader() }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {}
+
     await delay(60);
     const jobs = getStoredJobs();
     const apps = getStoredApplications();
@@ -526,6 +721,59 @@ export const api = {
         "Interviewing": statusCounts.INTERVIEWING, 
         "Offered": statusCounts.OFFERED 
       }
+    };
+  },
+
+  // ==========================================
+  // INTERVIEWS APIS
+  // ==========================================
+  async getInterviews() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/interviews`, {
+        headers: { ...getAuthHeader() }
+      });
+      if (response.ok) {
+        const interviews = await response.json();
+        return interviews.map(i => ({ ...i, id: i.id || i._id }));
+      }
+    } catch (e) {}
+
+    return [
+      {
+        id: 1,
+        candidateName: 'John Doe',
+        jobTitle: 'Senior Java Backend Engineer',
+        companyName: 'Google',
+        date: '2026-09-18',
+        time: '10:30 AM PST',
+        type: 'Technical Screening',
+        meetingUrl: 'https://meet.google.com/tp-interview-room',
+        interviewer: 'Sarah Jenkins (Senior Technical Recruiter)',
+        status: 'SCHEDULED'
+      }
+    ];
+  },
+
+  async scheduleInterview(interviewData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/interviews/schedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify(interviewData)
+      });
+      if (response.ok) {
+        const scheduled = await response.json();
+        return { ...scheduled, id: scheduled.id || scheduled._id };
+      }
+    } catch (e) {}
+
+    return {
+      id: Date.now(),
+      ...interviewData,
+      status: 'SCHEDULED'
     };
   }
 };

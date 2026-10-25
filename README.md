@@ -39,33 +39,49 @@ TalentPulse is an AI-powered enterprise **Applicant Tracking System (ATS)** and 
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Full-Stack Setup & Quick Start
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18.0.0 or higher)
-- [npm](https://www.npmjs.com/) (v9.0.0 or higher)
+- [MongoDB](https://www.mongodb.com/) (Local service or MongoDB Atlas)
 
-### Installation & Launch
+### 1-Step Launch (Runs Frontend & Backend Together)
+From the repository root (`d:\Projects\ATS\ATS`):
+```bash
+npm start
+```
+> Starts both the **Express & MongoDB Backend** (`http://localhost:5000`) and **React Frontend** (`http://localhost:3000`) concurrently.
 
-1. **Install dependencies**:
-   ```bash
-   cd frontend
-   npm install
-   ```
+---
 
-2. **Start the Development Server**:
-   ```bash
-   npm run dev
-   ```
-   *(Or from the repository root: `npm run dev`)*
+### Running Separately
 
-3. **Open the App in your browser**:
-   Navigate to [http://localhost:3000](http://localhost:3000)
+- **Backend only**:
+  ```bash
+  cd backend
+  npm run dev
+  ```
+- **Frontend only**:
+  ```bash
+  cd frontend
+  npm run dev
+  ```
 
-4. **Production Build**:
-   ```bash
-   npm run build
-   ```
+---
+
+## 🗄️ Backend & Database Architecture
+
+- **Database**: MongoDB (`mongodb://127.0.0.1:27017/talentpulse_ats`)
+- **Backend Stack**: Node.js, Express, Mongoose, JWT, bcryptjs, Multer
+- **API Endpoints**:
+  - `POST /api/auth/register` & `POST /api/auth/login` (JWT & bcrypt authentication)
+  - `GET /api/jobs` & `POST /api/jobs` (Job requisitions)
+  - `POST /api/applications/apply` & `GET /api/applications/my` (Applications & tracking)
+  - `POST /api/ats/parse` (Intelligent resume parser and ATS match scoring)
+  - `GET /api/interviews` & `POST /api/interviews/schedule` (Interview calendar)
+  - `GET /api/analytics/stats` (Platform KPI funnel metrics)
+- **Automatic Database Seeding**: On initial connection, MongoDB automatically populates with demo users, open jobs, applications, and interviews.
+- **Client Fallback**: The frontend connects to `http://localhost:5000/api` and seamlessly falls back to local storage if the server is offline.
 
 ---
 
