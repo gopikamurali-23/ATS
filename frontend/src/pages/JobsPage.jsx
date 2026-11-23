@@ -70,9 +70,16 @@ export const JobsPage = ({ onOpenAuthModal }) => {
 
   const handleSubmitApplication = async (e) => {
     e.preventDefault();
-    const result = applyJobSchema.safeParse({ resumeText: applyResumeText });
+    if (!selectedJobForApply) return;
+
+    const jobId = selectedJobForApply.id || selectedJobForApply._id;
+    const result = applyJobSchema.safeParse({
+      jobId,
+      resumeText: applyResumeText.trim()
+    });
+
     if (!result.success) {
-      setApplyError(result.error.errors[0]?.message || 'Please enter valid resume text.');
+      setApplyError(result.error.issues?.[0]?.message || result.error.errors?.[0]?.message || 'Please enter valid resume text.');
       return;
     }
 
@@ -80,9 +87,13 @@ export const JobsPage = ({ onOpenAuthModal }) => {
     setApplyError('');
     try {
       await applyToJob({
-        jobId: selectedJobForApply.id,
+        jobId,
+        jobTitle: selectedJobForApply.title,
+        companyName: selectedJobForApply.companyName,
+        candidateEmail: user?.email,
+        candidateName: user?.fullName || user?.username,
         resumeText: applyResumeText,
-        resumeFileName: `${user.username || 'Candidate'}_Application_Resume.txt`
+        resumeFileName: `${user?.username || 'Candidate'}_Application_Resume.txt`
       });
       toastSuccess(`Application submitted successfully to ${selectedJobForApply.companyName}!`);
       setSelectedJobForApply(null);

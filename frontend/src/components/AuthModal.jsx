@@ -274,15 +274,28 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
   // OTP INPUT HANDLERS
   const handleOtpDigitChange = (index, value) => {
-    if (!/^[0-9]?$/.test(value)) return;
+    const digit = value.replace(/\D/g, '').slice(-1);
     const newOtp = [...otpDigits];
-    newOtp[index] = value;
+    newOtp[index] = digit;
     setOtpDigits(newOtp);
 
     // Auto focus next box
-    if (value && index < 5) {
+    if (digit && index < 5) {
       otpInputRefs[index + 1].current?.focus();
     }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!paste) return;
+    const newOtp = [...otpDigits];
+    for (let i = 0; i < 6; i++) {
+      newOtp[i] = paste[i] || '';
+    }
+    setOtpDigits(newOtp);
+    const targetIdx = Math.min(paste.length, 5);
+    otpInputRefs[targetIdx].current?.focus();
   };
 
   const handleOtpKeyDown = (index, e) => {
@@ -537,8 +550,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
+                  maxLength={60}
                   value={loginIdentifier}
-                  onChange={(e) => setLoginIdentifier(e.target.value)}
+                  onChange={(e) => setLoginIdentifier(e.target.value.replace(/\s/g, ''))}
                   placeholder={viewMode === 'login-applicant' ? 'john.doe@example.com' : 'careers@google.com'}
                   className={`w-full pl-9 pr-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                     errors.loginIdentifier ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-blue-500'
@@ -603,8 +617,12 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
 
               <input
                 type="text"
+                maxLength={5}
                 value={userCaptchaInput}
-                onChange={(e) => setUserCaptchaInput(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+                  setUserCaptchaInput(val);
+                }}
                 placeholder="Enter 5-character CAPTCHA code"
                 className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 font-mono uppercase tracking-wider ${
                   errors.captcha ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-blue-500'
@@ -708,8 +726,12 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
               </label>
               <input
                 type="text"
+                maxLength={50}
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^a-zA-Z\s'-]/g, '');
+                  setFullName(val);
+                }}
                 placeholder="John Smith"
                 className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                   errors.fullName ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-blue-500'
@@ -725,8 +747,13 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  maxLength={2}
                   value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                    setAge(val);
+                  }}
                   placeholder="25"
                   className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                     errors.age ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-blue-500'
@@ -740,9 +767,14 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                   Phone Number <span className="text-rose-500 font-bold ml-1">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setPhone(val);
+                  }}
                   placeholder="5550192831"
                   className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                     errors.phone ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-blue-500'
@@ -757,9 +789,10 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 Email Address <span className="text-rose-500 font-bold ml-1">*</span>
               </label>
               <input
-                type="text"
+                type="email"
+                maxLength={60}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.replace(/\s/g, ''))}
                 placeholder="john.smith@example.com"
                 className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                   errors.email ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-blue-500'
@@ -873,8 +906,12 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
               </label>
               <input
                 type="text"
+                maxLength={50}
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^a-zA-Z\s'-]/g, '');
+                  setFullName(val);
+                }}
                 placeholder="Sarah Jenkins"
                 className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                   errors.fullName ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-indigo-500'
@@ -888,9 +925,10 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 Work Email Address <span className="text-rose-500 font-bold ml-1">*</span>
               </label>
               <input
-                type="text"
+                type="email"
+                maxLength={60}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.replace(/\s/g, ''))}
                 placeholder="sarah.jenkins@company.com"
                 className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                   errors.email ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-indigo-500'
@@ -905,9 +943,14 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                   Phone Number <span className="text-rose-500 font-bold ml-1">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setPhone(val);
+                  }}
                   placeholder="5550198822"
                   className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                     errors.phone ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-indigo-500'
@@ -922,8 +965,12 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 </label>
                 <input
                   type="text"
+                  maxLength={80}
                   value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^a-zA-Z0-9\s&.,'()-]/g, '').slice(0, 80);
+                    setCompanyName(val);
+                  }}
                   placeholder="Acme Inc."
                   className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                     errors.companyName ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-indigo-500'
@@ -1077,12 +1124,13 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
             </div>
 
             {/* 6 Segmented Digit Inputs */}
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
               {otpDigits.map((digit, idx) => (
                 <input
                   key={idx}
                   ref={otpInputRefs[idx]}
                   type="text"
+                  inputMode="numeric"
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
@@ -1133,9 +1181,10 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
                 Registered Email <span className="text-rose-500 font-bold ml-1">*</span>
               </label>
               <input
-                type="text"
+                type="email"
+                maxLength={60}
                 value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
+                onChange={(e) => setResetEmail(e.target.value.replace(/\s/g, ''))}
                 placeholder="user@example.com"
                 className={`w-full px-3 py-2 text-xs border rounded-xl dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 ${
                   errors.resetEmail ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-zinc-700 focus:ring-blue-500'
@@ -1178,9 +1227,10 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onRoleSelect
               </label>
               <input
                 type="text"
+                inputMode="numeric"
                 maxLength={6}
                 value={resetOtp}
-                onChange={(e) => setResetOtp(e.target.value)}
+                onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="123456"
                 className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 font-mono text-center tracking-widest text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />

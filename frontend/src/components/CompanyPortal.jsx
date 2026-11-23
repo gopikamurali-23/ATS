@@ -120,7 +120,11 @@ export const CompanyPortal = ({ onBackToHome }) => {
 
   const filteredApplications = selectedJobIdFilter === 'ALL'
     ? applications
-    : applications.filter(a => a.jobId === Number(selectedJobIdFilter) || a.job?.id === Number(selectedJobIdFilter));
+    : applications.filter(a => 
+        String(a.jobId) === String(selectedJobIdFilter) || 
+        String(a.job?.id) === String(selectedJobIdFilter) ||
+        String(a.job?._id) === String(selectedJobIdFilter)
+      );
 
   const totalAppPages = Math.ceil(filteredApplications.length / appsPerPage) || 1;
   const paginatedApplications = filteredApplications.slice((appPage - 1) * appsPerPage, appPage * appsPerPage);

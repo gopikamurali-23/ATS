@@ -27,14 +27,32 @@ export const useApplications = (isCompany = false) => {
   }, [fetchApplications]);
 
   // Apply to a job with validation
-  const applyToJob = async (formData) => {
-    const rawData = {
-      jobId: formData.get('jobId'),
-      resumeText: formData.get('resumeText')
-    };
-    applyJobSchema.parse(rawData);
+  const applyToJob = async (input) => {
+    let jobId;
+    let resumeText;
+    let payload;
 
-    const newApp = await api.applyToJob(formData);
+    if (input instanceof FormData) {
+      payload = input;
+      jobId = input.get('jobId');
+      resumeText = input.get('resumeText');
+    } else if (input && typeof input === 'object') {
+      jobId = input.jobId;
+      resumeText = input.resumeText;
+      const fd = new FormData();
+      Object.keys(input).forEach(k => {
+        if (input[k] !== undefined && input[k] !== null) {
+          fd.append(k, input[k]);
+        }
+      });
+      payload = fd;
+    } else {
+      throw new Error('Invalid application data provided.');
+    }
+
+    applyJobSchema.parse({ jobId, resumeText: (resumeText || '').trim() });
+
+    const newApp = await api.applyToJob(payload);
     setApplications(prev => [newApp, ...prev]);
     return newApp;
   };

@@ -476,13 +476,24 @@ export const api = {
   // RESUME PARSING & ATS ANALYSIS APIS
   // ==========================================
   async parseResume(formData) {
+    let payload = formData;
+    if (!(formData instanceof FormData) && typeof formData === 'object' && formData !== null) {
+      const fd = new FormData();
+      Object.keys(formData).forEach(k => {
+        if (formData[k] !== undefined && formData[k] !== null) {
+          fd.append(k, formData[k]);
+        }
+      });
+      payload = fd;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/ats/parse`, {
         method: 'POST',
         headers: {
           ...getAuthHeader()
         },
-        body: formData
+        body: payload
       });
       if (response.ok) {
         return await response.json();
@@ -492,13 +503,16 @@ export const api = {
     }
 
     await delay(180);
-    const resumeText = formData.get('resumeText') || '';
-    const file = formData.get('resumeFile');
-    const fileName = file?.name || 'Uploaded_Resume.pdf';
-    const jobId = formData.get('jobId');
+    const resumeText = formData instanceof FormData ? (formData.get('resumeText') || '') : (formData?.resumeText || '');
+    const file = formData instanceof FormData ? formData.get('resumeFile') : formData?.resumeFile;
+    const fileName = file?.name || formData?.resumeFileName || (formData instanceof FormData ? formData.get('resumeFileName') : '') || 'Uploaded_Resume.pdf';
+    const jobId = formData instanceof FormData ? formData.get('jobId') : formData?.jobId;
+    const jobTitle = formData instanceof FormData ? formData.get('jobTitle') : formData?.jobTitle;
 
     const jobs = getStoredJobs();
-    const targetJob = jobs.find(j => j.id == jobId) || jobs[0];
+    const targetJob = jobs.find(j => String(j.id) === String(jobId) || String(j._id) === String(jobId)) ||
+      jobs.find(j => j.title && j.title.toLowerCase() === String(jobTitle || '').toLowerCase()) ||
+      jobs[0];
 
     const combinedContent = `${fileName} ${resumeText}`.toLowerCase();
     const extractedSkills = TECH_SKILLS_DICTIONARY.filter(skill => 
@@ -544,13 +558,24 @@ export const api = {
   // JOB APPLICATION SUBMISSION & TRACKING APIS
   // ==========================================
   async applyToJob(formData) {
+    let payload = formData;
+    if (!(formData instanceof FormData) && typeof formData === 'object' && formData !== null) {
+      const fd = new FormData();
+      Object.keys(formData).forEach(k => {
+        if (formData[k] !== undefined && formData[k] !== null) {
+          fd.append(k, formData[k]);
+        }
+      });
+      payload = fd;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/applications/apply`, {
         method: 'POST',
         headers: {
           ...getAuthHeader()
         },
-        body: formData
+        body: payload
       });
       if (response.ok) {
         const app = await response.json();
@@ -562,21 +587,33 @@ export const api = {
 
     await delay(150);
     const parseResult = await this.parseResume(formData);
-    const jobId = formData.get('jobId');
+    const jobId = formData instanceof FormData ? formData.get('jobId') : formData?.jobId;
+    const jobTitle = formData instanceof FormData ? formData.get('jobTitle') : formData?.jobTitle;
+    const candidateEmail = formData instanceof FormData ? formData.get('candidateEmail') : formData?.candidateEmail;
+    const candidateName = formData instanceof FormData ? formData.get('candidateName') : formData?.candidateName;
+
     const jobs = getStoredJobs();
-    const job = jobs.find(j => j.id == jobId) || jobs[0];
+    const job = jobs.find(j => String(j.id) === String(jobId) || String(j._id) === String(jobId)) ||
+      jobs.find(j => j.title && j.title.toLowerCase() === String(jobTitle || '').toLowerCase()) ||
+      jobs[0];
+
+    let currentUser = null;
+    try {
+      const stored = localStorage.getItem('talentpulse_user');
+      if (stored) currentUser = JSON.parse(stored);
+    } catch (e) {}
 
     const apps = getStoredApplications();
     const newApp = {
       id: Date.now(),
-      jobId: job.id,
+      jobId: job.id || job._id,
       job,
       candidate: {
-        id: 1,
-        username: "john_doe",
-        fullName: "John Doe",
-        email: "john.doe@example.com",
-        role: "ROLE_CANDIDATE"
+        id: currentUser?._id || currentUser?.id || 1,
+        username: currentUser?.username || "candidate",
+        fullName: candidateName || currentUser?.fullName || currentUser?.username || "Candidate",
+        email: candidateEmail || currentUser?.email || "candidate@example.com",
+        role: currentUser?.role || "ROLE_CANDIDATE"
       },
       status: "APPLIED",
       matchScore: parseResult.atsMatchScore,

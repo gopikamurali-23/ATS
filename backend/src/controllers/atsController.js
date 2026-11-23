@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Job } from '../models/Job.js';
 
 export const TECH_SKILLS_DICTIONARY = [
@@ -57,13 +58,26 @@ export const parseResumeText = (resumeText, fileName, targetJob) => {
 export const parseResume = async (req, res, next) => {
   try {
     const resumeText = req.body.resumeText || '';
-    const jobId = req.body.jobId;
+    const { jobId, jobTitle } = req.body;
     const file = req.file;
     const fileName = file ? file.originalname : (req.body.fileName || 'Uploaded_Resume.pdf');
 
     let targetJob = null;
-    if (jobId) {
+    if (jobId && mongoose.Types.ObjectId.isValid(jobId)) {
       targetJob = await Job.findById(jobId).catch(() => null);
+    }
+    if (!targetJob && jobId) {
+      targetJob = await Job.findOne({
+        $or: [
+          { title: jobTitle || jobId },
+          { _id: mongoose.Types.ObjectId.isValid(jobId) ? jobId : undefined }
+        ].filter(Boolean)
+      }).catch(() => null);
+    }
+    if (!targetJob && jobTitle) {
+      targetJob = await Job.findOne({
+        title: new RegExp(`^${jobTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+      }).catch(() => null);
     }
     if (!targetJob) {
       targetJob = await Job.findOne();

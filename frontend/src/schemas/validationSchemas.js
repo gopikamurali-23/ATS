@@ -7,7 +7,10 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{}
 const phoneRegex = /^\d{10}$/;
 
 export const candidateRegisterSchema = z.object({
-  fullName: z.string().trim().min(2, 'Full Name must be at least 2 characters'),
+  fullName: z.string().trim()
+    .min(2, 'Full Name must be at least 2 characters')
+    .max(50, 'Full Name cannot exceed 50 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Full Name can only contain letters, spaces, hyphens, and apostrophes'),
   age: z.coerce.number().min(18, 'Age must be at least 18 years').max(75, 'Age cannot exceed 75 years'),
   phone: z.string().trim().regex(phoneRegex, 'Phone must be exactly 10 digits (e.g. 5550192831)'),
   email: z.string().trim().email('Invalid email address format'),
@@ -22,8 +25,14 @@ export const candidateRegisterSchema = z.object({
 });
 
 export const recruiterRegisterSchema = z.object({
-  fullName: z.string().trim().min(2, 'Full Name must be at least 2 characters'),
-  companyName: z.string().trim().min(2, 'Company Name must be at least 2 characters'),
+  fullName: z.string().trim()
+    .min(2, 'Full Name must be at least 2 characters')
+    .max(50, 'Full Name cannot exceed 50 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Full Name can only contain letters, spaces, hyphens, and apostrophes'),
+  companyName: z.string().trim()
+    .min(2, 'Company Name must be at least 2 characters')
+    .max(80, 'Company Name cannot exceed 80 characters')
+    .regex(/^[a-zA-Z0-9\s&.,'()-]+$/, 'Company Name contains invalid characters'),
   email: z.string().trim().email('Invalid work email address format'),
   phone: z.string().trim().regex(phoneRegex, 'Phone must be exactly 10 digits (e.g. 5550192831)'),
   password: z.string().regex(
@@ -39,7 +48,7 @@ export const recruiterRegisterSchema = z.object({
 export const loginSchema = z.object({
   loginIdentifier: z.string().trim().min(1, 'Email address or username is required'),
   loginPassword: z.string().min(1, 'Password is required'),
-  captcha: z.string().trim().min(1, 'Security CAPTCHA verification is required')
+  captcha: z.string().trim().length(5, 'CAPTCHA code must be exactly 5 alphanumeric characters')
 });
 
 export const forgotPasswordSchema = z.object({
@@ -69,7 +78,10 @@ export const jobPostSchema = z.object({
 });
 
 export const applyJobSchema = z.object({
-  jobId: z.coerce.number().min(1, 'Valid job selection is required'),
+  jobId: z.union([
+    z.string().trim().min(1, 'Valid job selection is required'),
+    z.number().min(1, 'Valid job selection is required')
+  ]),
   resumeText: z.string().trim().min(10, 'Resume text or overview must be at least 10 characters')
 });
 

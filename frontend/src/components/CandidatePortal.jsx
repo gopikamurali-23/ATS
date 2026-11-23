@@ -58,8 +58,8 @@ export const CandidatePortal = ({ onBackToHome }) => {
   ]);
 
   const handleToggleSaveJob = (jobId) => {
-    if (savedJobIds.includes(jobId)) {
-      setSavedJobIds(savedJobIds.filter(id => id !== jobId));
+    if (savedJobIds.some(id => String(id) === String(jobId))) {
+      setSavedJobIds(savedJobIds.filter(id => String(id) !== String(jobId)));
       toastSuccess('Job removed from saved bookmarks');
     } else {
       setSavedJobIds([...savedJobIds, jobId]);
@@ -71,14 +71,16 @@ export const CandidatePortal = ({ onBackToHome }) => {
     e.preventDefault();
     if (!selectedJobForApply) return;
 
+    const jobId = selectedJobForApply.id || selectedJobForApply._id;
+
     // Strict validation via Zod
     const result = applyJobSchema.safeParse({
-      jobId: selectedJobForApply.id,
+      jobId,
       resumeText: applyResumeText.trim()
     });
 
     if (!result.success) {
-      setApplyError(result.error.issues[0]?.message || 'Please provide a valid resume overview');
+      setApplyError(result.error.issues?.[0]?.message || 'Please provide a valid resume overview');
       return;
     }
 
@@ -86,8 +88,13 @@ export const CandidatePortal = ({ onBackToHome }) => {
     setIsApplying(true);
     try {
       const formData = new FormData();
-      formData.append('jobId', selectedJobForApply.id);
+      formData.append('jobId', jobId);
+      formData.append('jobTitle', selectedJobForApply.title || '');
+      formData.append('companyName', selectedJobForApply.companyName || '');
+      formData.append('candidateEmail', user?.email || '');
+      formData.append('candidateName', user?.fullName || user?.username || '');
       formData.append('resumeText', applyResumeText);
+      formData.append('resumeFileName', `${user?.username || 'Candidate'}_Resume.txt`);
 
       await applyToJob(formData);
       toastSuccess(`Successfully applied for ${selectedJobForApply.title} at ${selectedJobForApply.companyName}!`);
@@ -117,7 +124,7 @@ export const CandidatePortal = ({ onBackToHome }) => {
   const totalJobPages = Math.ceil(filteredJobs.length / jobsPerPage) || 1;
   const paginatedJobs = filteredJobs.slice((jobsPage - 1) * jobsPerPage, jobsPage * jobsPerPage);
 
-  const savedJobsList = jobs.filter(j => savedJobIds.includes(j.id));
+  const savedJobsList = jobs.filter(j => savedJobIds.some(id => String(id) === String(j.id) || String(id) === String(j._id)));
 
   return (
     <div className="space-y-4">
